@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { ChevronRight, Target, Info, Cpu, TrendingUp, Zap, Server, Shield, Check, X, CloudSun, Star, Store } from 'lucide-react';
 
