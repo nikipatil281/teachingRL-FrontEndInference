@@ -1,0 +1,44 @@
+[
+    {
+        "id": "sunny_yes",
+        "weather": "sunny",
+        "event": "yes",
+        "min_price": "5.00",
+        "max_price": "7.00"
+    },
+    {
+        "id": "sunny_no",
+        "weather": "sunny",
+        "event": "no",
+        "min_price": "4.00",
+        "max_price": "5.50"
+    },
+    {
+        "id": "cloudy_yes",
+        "weather": "cloudy",
+        "event": "yes",
+        "min_price": "6.00",
+        "max_price": "8.00"
+    },
+    {
+        "id": "cloudy_no",
+        "weather": "cloudy",
+        "event": "no",
+        "min_price": "4.50",
+        "max_price": "6.50"
+    },
+    {
+        "id": "rainy_yes",
+        "weather": "rainy",
+        "event": "yes",
+        "min_price": "7.00",
+        "max_price": "9.00"
+    },
+    {
+        "id": "rainy_no",
+        "weather": "rainy",
+        "event": "no",
+        "min_price": "5.50",
+        "max_price": "7.50"
+    }
+]

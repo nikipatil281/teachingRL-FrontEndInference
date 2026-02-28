@@ -1,0 +1,98 @@
+[
+    {
+        "id": "sunny_yes_yes",
+        "weather": "sunny",
+        "event": "yes",
+        "competitor": "yes",
+        "min_price": "competitor_price - 0.50",
+        "max_price": "competitor_price"
+    },
+    {
+        "id": "sunny_yes_no",
+        "weather": "sunny",
+        "event": "yes",
+        "competitor": "no",
+        "min_price": "5.00",
+        "max_price": "7.00"
+    },
+    {
+        "id": "sunny_no_yes",
+        "weather": "sunny",
+        "event": "no",
+        "competitor": "yes",
+        "min_price": "competitor_price - 1.00",
+        "max_price": "competitor_price - 0.50"
+    },
+    {
+        "id": "sunny_no_no",
+        "weather": "sunny",
+        "event": "no",
+        "competitor": "no",
+        "min_price": "4.00",
+        "max_price": "5.50"
+    },
+    {
+        "id": "cloudy_yes_yes",
+        "weather": "cloudy",
+        "event": "yes",
+        "competitor": "yes",
+        "min_price": "competitor_price",
+        "max_price": "competitor_price + 0.50"
+    },
+    {
+        "id": "cloudy_yes_no",
+        "weather": "cloudy",
+        "event": "yes",
+        "competitor": "no",
+        "min_price": "6.00",
+        "max_price": "8.00"
+    },
+    {
+        "id": "cloudy_no_yes",
+        "weather": "cloudy",
+        "event": "no",
+        "competitor": "yes",
+        "min_price": "competitor_price - 0.50",
+        "max_price": "competitor_price"
+    },
+    {
+        "id": "cloudy_no_no",
+        "weather": "cloudy",
+        "event": "no",
+        "competitor": "no",
+        "min_price": "4.50",
+        "max_price": "6.50"
+    },
+    {
+        "id": "rainy_yes_yes",
+        "weather": "rainy",
+        "event": "yes",
+        "competitor": "yes",
+        "min_price": "competitor_price + 0.50",
+        "max_price": "competitor_price + 1.00"
+    },
+    {
+        "id": "rainy_yes_no",
+        "weather": "rainy",
+        "event": "yes",
+        "competitor": "no",
+        "min_price": "7.00",
+        "max_price": "9.00"
+    },
+    {
+        "id": "rainy_no_yes",
+        "weather": "rainy",
+        "event": "no",
+        "competitor": "yes",
+        "min_price": "competitor_price",
+        "max_price": "competitor_price + 0.50"
+    },
+    {
+        "id": "rainy_no_no",
+        "weather": "rainy",
+        "event": "no",
+        "competitor": "no",
+        "min_price": "5.50",
+        "max_price": "7.50"
+    }
+]
