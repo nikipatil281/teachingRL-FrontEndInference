@@ -8,6 +8,12 @@ class RLAgent {
     };
   }
 
+  normalizePrice(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return 5;
+    return Math.min(10, Math.max(1, Math.round(numeric)));
+  }
+
   async getAction(conditions, yesterdayPrice = 4.50) {
     const dayOfWeek =
       typeof conditions.day === "string"
@@ -37,7 +43,7 @@ class RLAgent {
       if (!response.ok) throw new Error("Backend unavailable");
 
       const data = await response.json();
-      const suggestedPrice = data.suggested_price;
+      const suggestedPrice = this.normalizePrice(data.suggested_price);
       console.log(`[RL Agent] Predicted price for day: $${suggestedPrice}`);
 
       return {
@@ -50,8 +56,8 @@ class RLAgent {
       console.warn("RL Agent fallback (Backend connection error):", error);
       // Fallback to a safe price if backend is down
       return {
-        action: "price_$5.50",
-        price: 5.50,
+        action: "price_$5.00",
+        price: 5,
         isExploring: false,
         state: "fallback"
       };
@@ -60,35 +66,38 @@ class RLAgent {
 
   // Heuristic-based optimal range for policy review summary
   getOptimalRange(conditions) {
-    let minPrice = 4.0;
-    let maxPrice = 6.0;
+    let minPrice = 3;
+    let maxPrice = 7;
 
     // Adjust based on weather
     if (conditions.weather === 'Rainy') {
-      minPrice = 4.5;
-      maxPrice = 5.5;
+      minPrice = 2;
+      maxPrice = 5;
     } else if (conditions.weather === 'Cloudy') {
-      minPrice = 5.0;
-      maxPrice = 6.0;
+      minPrice = 3;
+      maxPrice = 6;
     } else if (conditions.weather === 'Sunny') {
-      minPrice = 4.0;
-      maxPrice = 5.0;
+      minPrice = 4;
+      maxPrice = 8;
     }
 
     // Adjust for events and competitor
     if (conditions.nearbyEvent) {
-      minPrice += 1.0;
-      maxPrice += 1.0;
+      minPrice += 1;
+      maxPrice += 1;
     }
 
     if (conditions.competitorPresent && conditions.competitorPrice) {
       // RL agent tends to stay close to or slightly below competitor if they are cheap
-      if (conditions.competitorPrice < minPrice + 0.5) {
-        minPrice = Math.max(3.5, conditions.competitorPrice - 0.5);
+      if (conditions.competitorPrice < minPrice + 1) {
+        minPrice = Math.max(1, Math.round(conditions.competitorPrice - 1));
       }
     }
 
-    return { minPrice, maxPrice };
+    return {
+      minPrice: Math.max(1, Math.min(10, Math.round(minPrice))),
+      maxPrice: Math.max(1, Math.min(10, Math.round(maxPrice)))
+    };
   }
 
   // Learning is handled in Python, this is a placeholder to match existing interface

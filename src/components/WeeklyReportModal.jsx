@@ -4,7 +4,7 @@ import { TrendingUp, Award, AlertCircle, Sun, Moon, TableProperties } from 'luci
 import ProfitChart from './ProfitChart';
 import { rlAgent } from '../logic/RLAgent';
 
-const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutorial, theme, toggleTheme, shopName = "You", isTutorial = false, weekHistoryData = [], gameConfig = { weather: true, event: true, competitor: true } }) => {
+const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutorial, theme, toggleTheme, shopName = "You", isTutorial = false, weekHistoryData = [] }) => {
   if (!isOpen) return null;
 
   // data = { playerTotal, mlTotal, rlTotal, playerSales, mlSales, rlSales } for the week
@@ -19,22 +19,10 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
     const stateKey = `${record.weather}_${record.nearbyEvent}_${record.competitorPresent}`;
 
     if (!policyMap[stateKey]) {
-      // Calculate optimal range using the new RLAgent helper
-      const conditions = {
-        weather: record.weather,
-        nearbyEvent: record.nearbyEvent,
-        competitorPresent: record.competitorPresent,
-        competitorPrice: record.competitorOriginalPrice || record.competitorPrice // fallback depending on where data came from
-      };
-
-      const { minPrice, maxPrice } = rlAgent.getOptimalRange(conditions, gameConfig);
-
       policyMap[stateKey] = {
         weather: record.weather,
         event: record.nearbyEvent,
         competitor: record.competitorPresent,
-        minPrice,
-        maxPrice,
         playerPrices: [],
         rlPrices: []
       };
@@ -59,8 +47,7 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
     return {
       ...state,
       playerRangeStr: playerMin === playerMax ? `$${playerMin?.toFixed(2)}` : `$${playerMin?.toFixed(2)} - $${playerMax?.toFixed(2)}`,
-      rlRangeStr: rlMin === rlMax ? `$${rlMin?.toFixed(2)}` : `$${rlMin?.toFixed(2)} - $${rlMax?.toFixed(2)}`,
-      optimalRangeStr: state.minPrice === state.maxPrice ? `$${state.minPrice?.toFixed(2)}` : `$${state.minPrice?.toFixed(2)} - $${state.maxPrice?.toFixed(2)}`,
+      rlRangeStr: rlMin === null ? "Fetching..." : (rlMin === rlMax ? `$${rlMin?.toFixed(2)}` : `$${rlMin?.toFixed(2)} - $${rlMax?.toFixed(2)}`),
       count: state.playerPrices.length
     };
   });
@@ -135,7 +122,7 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
             {/* Shared Chart rendering for Week Data */}
             {isTutorial && weekHistoryData.length > 0 && (
               <div className="bg-coffee-950/50 border border-coffee-800 rounded-xl p-4 h-[300px]">
-                <ProfitChart data={weekHistoryData} showRLAgents={false} shopName={shopName} />
+                <ProfitChart data={weekHistoryData} showRLAgents={false} showMLAgent={false} shopName={shopName} />
               </div>
             )}
 
@@ -147,7 +134,7 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
                     <TableProperties className="w-5 h-5" />
                     Week {weekNumber} Pricing Policy Summary
                   </h3>
-                  <p className="text-xs text-coffee-400 mt-1">Review your exact prices during the market states encountered this week vs the RL agent pricing system</p>
+                  <p className="text-xs text-coffee-400 mt-1">Review your exact prices during the market states encountered this week vs the Reinforcement Learning agent pricing system</p>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -159,7 +146,7 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
                         <th className="px-3 py-3 font-bold border-b border-coffee-700 text-center">Competitor</th>
                         <th className="px-3 py-3 font-bold border-b border-coffee-700 text-center text-amber-400">Your Range</th>
                         {!isTutorial && (
-                          <th className="px-3 py-3 font-bold border-b border-coffee-700 text-center text-emerald-400">RL's Optimal Price Range</th>
+                          <th className="px-3 py-3 font-bold border-b border-coffee-700 text-center text-emerald-400">Reinforcement Learning Agent's Mastered Price</th>
                         )}
                       </tr>
                     </thead>
@@ -167,7 +154,7 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
                       {policyTable.sort((a, b) => b.count - a.count).map((state, idx) => (
                         <tr key={idx} className="hover:bg-coffee-700/20 transition-colors">
                           <td className="px-3 py-3 whitespace-nowrap">
-                            <span className={`font-medium px-2 py-1 rounded bg-coffee-900 border border-coffee-700 ${['Sunny', 'Hot'].includes(state.weather) ? 'text-amber-400' : 'text-blue-300'}`}>
+                            <span className={`font-medium px-2 py-1 rounded bg-coffee-900 border border-coffee-700 ${state.weather === 'Sunny' ? 'text-amber-400' : 'text-blue-300'}`}>
                               {state.weather}
                             </span>
                           </td>
@@ -190,7 +177,7 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
                           </td>
                           {!isTutorial && (
                             <td className="px-3 py-3 text-center font-mono text-emerald-400 font-bold bg-emerald-500/5">
-                              {state.optimalRangeStr}
+                              {state.rlRangeStr}
                             </td>
                           )}
                         </tr>

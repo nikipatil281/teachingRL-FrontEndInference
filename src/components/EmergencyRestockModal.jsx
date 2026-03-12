@@ -6,11 +6,9 @@ const EmergencyRestockModal = ({ isOpen, onRestock, theme }) => {
     const [selectedAmount, setSelectedAmount] = useState(200);
 
     const restockOptions = [
-        { amount: 100, price: 50 },
-        { amount: 200, price: 95 },
-        { amount: 300, price: 135 },
-        { amount: 400, price: 170 },
-        { amount: 500, price: 200 },
+        { amount: 200, price: 275 },
+        { amount: 350, price: 425 },
+        { amount: 500, price: 575 },
     ];
 
     if (!isOpen) return null;
@@ -39,7 +37,6 @@ const EmergencyRestockModal = ({ isOpen, onRestock, theme }) => {
                         <div className="text-coffee-200 text-sm leading-relaxed text-center">
                             You sold out of your coffee supplies before the end of the week.
                             You need to pay an emergency overnight delivery fee to restock your inventory.
-                            <span className="block mt-2 font-bold text-amber-500">Buying in bulk offers a slight discount!</span>
                         </div>
 
                         {/* Options */}
@@ -49,8 +46,8 @@ const EmergencyRestockModal = ({ isOpen, onRestock, theme }) => {
                                     key={option.amount}
                                     onClick={() => setSelectedAmount(option.amount)}
                                     className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${selectedAmount === option.amount
-                                            ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
-                                            : 'bg-coffee-800 border-coffee-700 hover:border-amber-500/50 opacity-70 hover:opacity-100'
+                                        ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                                        : 'bg-coffee-800 border-coffee-700 hover:border-amber-500/50 opacity-70 hover:opacity-100'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">

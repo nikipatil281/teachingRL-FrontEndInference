@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { motion, useAnimation } from 'framer-motion';
-import { ChevronRight, Target, AlertCircle, ShoppingCart, Info, Clock, Thermometer, Calendar } from 'lucide-react';
+import { motion, useAnimation, AnimatePresence } from 'framer-motion';
+import { ChevronRight, ChevronLeft, Target, AlertCircle, ShoppingCart, Info, Clock, Thermometer, Calendar } from 'lucide-react';
 
 const PrePhase1Transition = ({ onComplete, theme }) => {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const controls = useAnimation();
     const [containerWidth, setContainerWidth] = useState(0);
     const sliderRef = React.useRef(null);
+    const [boardStep, setBoardStep] = useState(0); // 0 = Terminologies, 1 = Context
 
     useEffect(() => {
         const updateWidth = () => {
@@ -19,8 +20,8 @@ const PrePhase1Transition = ({ onComplete, theme }) => {
         return () => window.removeEventListener('resize', updateWidth);
     }, []);
 
-    const SLIDER_WIDTH = containerWidth > 0 ? Math.min(360, containerWidth - 32) : 360; // px
-    const HANDLE_WIDTH = 56; // px
+    const SLIDER_WIDTH = containerWidth > 0 ? Math.min(550, containerWidth - 32) : 550; // px
+    const HANDLE_WIDTH = 110; // px
     const MAX_SLIDE = SLIDER_WIDTH - HANDLE_WIDTH - 8;
 
     const handleDragUpdate = (event, info) => {
@@ -47,42 +48,42 @@ const PrePhase1Transition = ({ onComplete, theme }) => {
             bg: "bg-amber-400/10",
             border: "border-amber-400/20",
             title: "Weekly Operations",
-            text: "A week starts on Monday morning and ends on Sunday night."
+            text: "A week starts on Monday morning and ends on Sunday night. Each days start at 7 AM and ends at 10 PM."
         },
         {
             color: "text-emerald-400",
             bg: "bg-emerald-400/10",
             border: "border-emerald-400/20",
             title: "Fixed Inventories",
-            text: "Raw materials for 1,000 cups of coffee are restocked every Sunday night."
+            text: "Raw materials (inventory) for 1,500 cups of coffee are restocked every Monday morning (before the day starts)."
         },
         {
             color: "text-red-400",
             bg: "bg-red-400/10",
             border: "border-red-400/20",
             title: "Perishable Goods",
-            text: "The shelf-life of raw materials is exactly one week. Any unsold materials will incur a wastage penalty on Sunday night."
+            text: "The shelf-life of your inventory is exactly one week. Any unsold inventory will incur a wastage penalty on Sunday night."
         },
         {
             color: "text-blue-400",
             bg: "bg-blue-400/10",
             border: "border-blue-400/20",
             title: "Emergency Restocking",
-            text: "If you sell out mid-week, you receive an emergency restock, but at a premium cost."
+            text: "If you sell out mid-week, you receive emergency restock options, but at a premium cost."
         },
         {
             color: "text-purple-400",
             bg: "bg-purple-400/10",
             border: "border-purple-400/20",
             title: "Cost Per Cup",
-            text: "Every cup has a base cost of $1.00. Setting your price too close to this ensures zero profit."
+            text: "You spend $1 to make every cup of coffee. Setting your price too close to this leads to minimising your profit."
         },
         {
             color: "text-orange-400",
             bg: "bg-orange-400/10",
             border: "border-orange-400/20",
             title: "External Variables",
-            text: "Consider the weather, day of the week, local events, and competitor pricing to balance demand."
+            text: "Consider the day of the week, weather, competitor pricing and local events while setting the daily price of coffee."
         }
     ];
 
@@ -98,7 +99,7 @@ const PrePhase1Transition = ({ onComplete, theme }) => {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="z-10 w-full max-w-5xl p-4 md:p-8"
+                className="z-10 w-full max-w-[90rem] p-4 md:p-8"
             >
                 <div className="text-center mb-8">
                     <motion.div
@@ -110,70 +111,128 @@ const PrePhase1Transition = ({ onComplete, theme }) => {
                         <Target className="w-8 h-8 text-amber-500" />
                     </motion.div>
                     <h1 className="text-3xl md:text-4xl font-black mb-4 bg-gradient-to-r from-coffee-100 to-coffee-400 bg-clip-text text-transparent">
-                        Objectives of Phase 1 (the Orientation)
+                        Objectives of Phase 1 (Orientation)
                     </h1>
                     <p className="text-lg md:text-xl text-coffee-300 font-medium max-w-2xl mx-auto">
-                        Your goal is to learn the essential terminologies of Reinforcement Learning while mastering the core mechanics of the simulation.
+                        Your goal as an Reinforcement Learning Agent is to learn the optimal pricing policy while understanding the essential terminologies.
                     </p>
                 </div>
 
-                <div className="flex flex-col xl:flex-row gap-6 mb-10">
-                    <div className="bg-coffee-950/50 rounded-2xl p-6 md:p-8 border border-coffee-800 flex-1">
-                        <h2 className="text-xl font-bold mb-6 text-coffee-100 flex items-center gap-2">
-                            <Info className="w-5 h-5 text-blue-400" />
-                            The Rules of the Simulation
-                        </h2>
-                        <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
-                            {rules.map((rule, idx) => (
-                                <motion.div
+                <div className="mb-10 max-w-5xl mx-auto">
+                    <AnimatePresence mode="wait">
+                        {boardStep === 0 ? (
+                            <motion.div
+                                key="rl-terminologies-board"
+                                initial={{ opacity: 0, x: 30 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -30 }}
+                                transition={{ duration: 0.35, ease: "easeOut" }}
+                                className="bg-coffee-950/50 rounded-2xl p-6 md:p-8 border border-coffee-800 w-full"
+                            >
+                                <h2 className="text-xl font-bold mb-6 text-coffee-100 flex items-center gap-2">
+                                    <Info className="w-5 h-5 text-emerald-400" />
+                                    Key Reinforcement Learning Terminologies
+                                </h2>
+                                <p className="text-sm text-coffee-400 font-medium leading-relaxed mb-6">
+                                    Pay close attention as the game engine will gradually introduce you to these concepts:
+                                </p>
+                                <ul className="space-y-4 text-sm text-coffee-300 font-medium tracking-wide">
+                                    <li className="flex items-start gap-3"><span className="text-red-400 font-bold shrink-0 w-44">Environment</span> The world you interact with.</li>
+                                    <li className="flex items-start gap-3"><span className="text-amber-400 font-bold shrink-0 w-44">State</span> The current conditions (the day of the week, weather, competitor pricing, local events and inventory level).</li>
+                                    <li className="flex items-start gap-3"><span className="text-emerald-400 font-bold shrink-0 w-44">Agent</span> The decision maker (YOU).</li>
+                                    <li className="flex items-start gap-3"><span className="text-blue-400 font-bold shrink-0 w-44">Action</span> The decision made (Setting daily price of coffee).</li>
+                                    <li className="flex items-start gap-3"><span className="text-purple-400 font-bold shrink-0 w-44">Reward</span> The positive feedback received based on Profit, Inventory Management, Competitor Pricing etc.</li>
+                                    <li className="flex items-start gap-3"><span className="text-rose-400 font-bold shrink-0 w-44">Penalty</span> The negative feedback received based on Restocking, Wastage etc.</li>
+                                    <li className="flex items-start gap-3"><span className="text-indigo-400 font-bold shrink-0 w-44">Policy</span> Your pricing strategy that optimises your rewards.</li>
+                                    <li className="flex items-start gap-3"><span className="text-blue-400 font-bold shrink-0 w-44">Sequential Learning</span> Learning from actions over time.</li>
+                                    <li className="flex items-start gap-3"><span className="text-yellow-400 font-bold shrink-0 w-44">Exploration</span> Trying new prices to learn the optimal price for a given state.</li>
+                                    <li className="flex items-start gap-3"><span className="text-orange-400 font-bold shrink-0 w-44">Exploitation</span> Using the known best price for a given state.</li>
+                                </ul>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="context-board"
+                                initial={{ opacity: 0, x: 30 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -30 }}
+                                transition={{ duration: 0.35, ease: "easeOut" }}
+                                className="bg-coffee-950/50 rounded-2xl p-6 md:p-8 border border-coffee-800 w-full"
+                            >
+                                <h2 className="text-xl font-bold mb-6 text-coffee-100 flex items-center gap-2">
+                                    <Info className="w-5 h-5 text-blue-400" />
+                                    The Context of the Simulation
+                                </h2>
+                                <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
+                                    {rules.map((rule, idx) => (
+                                        <motion.div
+                                            key={idx}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: 0.1 + (idx * 0.05) }}
+                                            className="flex items-start gap-4 transition-all duration-300"
+                                        >
+                                            <div className={`mt-1 h-10 w-10 shrink-0 rounded-xl flex items-center justify-center font-black text-lg ${rule.bg} ${rule.color} border ${rule.border} shadow-lg`}>
+                                                {(idx + 1).toString().padStart(2, '0')}
+                                            </div>
+                                            <div className="pt-0.5">
+                                                <h3 className="font-black text-coffee-100 mb-1.5 flex items-center gap-2">
+                                                    {rule.title}
+                                                </h3>
+                                                <p className="text-sm text-coffee-400 font-medium leading-relaxed">{rule.text}</p>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <div className="flex items-center justify-between mt-5">
+                        <button
+                            onClick={() => setBoardStep((s) => Math.max(0, s - 1))}
+                            disabled={boardStep === 0}
+                            className={`px-4 py-2 rounded-xl border font-bold text-sm flex items-center gap-2 transition-colors ${boardStep === 0
+                                ? 'opacity-40 cursor-not-allowed border-coffee-700 text-coffee-500 bg-coffee-900/40'
+                                : 'border-coffee-600 text-coffee-200 bg-coffee-800/70 hover:bg-coffee-700/70'
+                                }`}
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                            Previous
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                            {[0, 1].map((idx) => (
+                                <div
                                     key={idx}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.3 + (idx * 0.1) }}
-                                    className="flex items-start gap-4 transition-all duration-300"
-                                >
-                                    <div className={`mt-1 h-10 w-10 shrink-0 rounded-xl flex items-center justify-center font-black text-lg ${rule.bg} ${rule.color} border ${rule.border} shadow-lg`}>
-                                        {(idx + 1).toString().padStart(2, '0')}
-                                    </div>
-                                    <div className="pt-0.5">
-                                        <h3 className="font-black text-coffee-100 mb-1.5 flex items-center gap-2">
-                                            {rule.title}
-                                        </h3>
-                                        <p className="text-sm text-coffee-400 font-medium leading-relaxed">{rule.text}</p>
-                                    </div>
-                                </motion.div>
+                                    className={`h-2 rounded-full transition-all duration-300 ${boardStep === idx ? 'w-8 bg-amber-500' : 'w-2.5 bg-coffee-600'}`}
+                                />
                             ))}
                         </div>
-                    </div>
 
-                    {/* Key Terminologies Box */}
-                    <div className="bg-coffee-950/50 rounded-2xl p-6 md:p-8 border border-coffee-800 xl:w-[350px] shrink-0 flex flex-col self-start">
-                        <h2 className="text-xl font-bold mb-6 text-coffee-100 flex items-center gap-2">
-                            <Info className="w-5 h-5 text-emerald-400" />
-                            Key RL Terms to Learn
-                        </h2>
-                        <p className="text-sm text-coffee-400 font-medium leading-relaxed mb-6">
-                            Pay close attention as the game engine will gradually introduce you to these concepts:
-                        </p>
-                        <ul className="space-y-4 text-sm text-coffee-300 font-medium">
-                            <li className="flex items-start gap-3"><span className="text-emerald-400 font-bold shrink-0 w-24">Agent</span> The decision maker (You).</li>
-                            <li className="flex items-start gap-3"><span className="text-blue-400 font-bold shrink-0 w-24">Action</span> The decision made (Setting Price).</li>
-                            <li className="flex items-start gap-3"><span className="text-amber-400 font-bold shrink-0 w-24">State</span> The current situation (Weather, Events).</li>
-                            <li className="flex items-start gap-3"><span className="text-purple-400 font-bold shrink-0 w-24">Reward</span> The feedback received (Profit/Loss).</li>
-                            <li className="flex items-start gap-3"><span className="text-red-400 font-bold shrink-0 w-24">Environment</span> The world you interact with.</li>
-                        </ul>
+                        <button
+                            onClick={() => setBoardStep((s) => Math.min(1, s + 1))}
+                            disabled={boardStep === 1}
+                            className={`px-4 py-2 rounded-xl border font-bold text-sm flex items-center gap-2 transition-colors ${boardStep === 1
+                                ? 'opacity-40 cursor-not-allowed border-coffee-700 text-coffee-500 bg-coffee-900/40'
+                                : 'border-amber-500/40 text-amber-200 bg-amber-600/20 hover:bg-amber-500/30'
+                                }`}
+                        >
+                            Next
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
                 </div>
 
                 {/* Slide to Proceed Button */}
+                {boardStep === 1 && (
                 <div className="flex justify-center mt-8 pb-8" ref={sliderRef}>
                     <div
                         className="relative h-16 rounded-full flex items-center shadow-inner overflow-hidden border border-coffee-700/50 bg-coffee-900/80"
                         style={{ width: SLIDER_WIDTH }}
                     >
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                            <span className={`font-black uppercase tracking-widest text-sm ${isUnlocked ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300 ${theme === 'theme-black-coffee' ? 'text-coffee-400' : 'text-coffee-300'}`}>
-                                Start Phase 1
+                        <div className="absolute inset-0 flex items-center justify-center pl-32 pointer-events-none z-0">
+                            <span className={`font-black uppercase tracking-widest text-xs md:text-sm ${isUnlocked ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300 ${theme === 'theme-black-coffee' ? 'text-coffee-400' : 'text-coffee-300'}`}>
+                                Slide to start Phase 1 (Orientation)
                             </span>
                         </div>
 
@@ -184,7 +243,7 @@ const PrePhase1Transition = ({ onComplete, theme }) => {
                             onDragUpdate={handleDragUpdate}
                             onDragEnd={handleDragEnd}
                             animate={controls}
-                            className={`h-14 w-14 rounded-full ml-1 flex items-center justify-center cursor-grab active:cursor-grabbing z-10 shadow-lg ${isUnlocked ? 'bg-emerald-500 text-white' : 'bg-gradient-to-br from-amber-400 to-amber-600 text-coffee-950'}`}
+                            className={`h-14 rounded-full ml-1 flex items-center justify-center cursor-grab active:cursor-grabbing z-10 shadow-lg ${isUnlocked ? 'bg-emerald-500 text-white' : 'bg-gradient-to-br from-amber-400 to-amber-600 text-coffee-950'}`}
                             style={{ width: HANDLE_WIDTH }}
                         >
                             {isUnlocked ? (
@@ -194,11 +253,17 @@ const PrePhase1Transition = ({ onComplete, theme }) => {
                                     </svg>
                                 </motion.div>
                             ) : (
-                                <ChevronRight className="w-7 h-7 font-black" />
+                                <motion.div
+                                    animate={{ x: [0, 4, 0] }}
+                                    transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                                >
+                                    <ChevronRight className="w-7 h-7 font-black" />
+                                </motion.div>
                             )}
                         </motion.div>
                     </div>
                 </div>
+                )}
 
             </motion.div>
         </div>

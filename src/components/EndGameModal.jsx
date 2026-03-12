@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import RevenueChart from './RevenueChart';
+import { rlAgent } from '../logic/RLAgent';
 
 const EndGameModal = ({ isOpen, onRestart, history, theme, toggleTheme, shopName = "You", userName = "", onBackToWeeklyReport, onShowPolicyPage }) => {
     if (!isOpen || !history || history.length < 2) return null;
@@ -21,7 +22,7 @@ const EndGameModal = ({ isOpen, onRestart, history, theme, toggleTheme, shopName
     const totalCompPenalty = history.reduce((sum, r) => sum + (r.competitorPenalty || 0), 0);
 
     // Calculate total starting stock over 4 weeks
-    const totalCupsStock = 4000;
+    const totalCupsStock = 20000;
 
     // Calculate raw left-over cups at the very end
     const playerRemaining = totalCupsStock - playerTotalSales;
@@ -37,10 +38,57 @@ const EndGameModal = ({ isOpen, onRestart, history, theme, toggleTheme, shopName
             return "Outstanding execution! You intuitively grasped the market shock dynamics better than the mathematical models. You perfectly balanced undercutting the competitor without sacrificing margins on high-demand days.";
         }
         if (winner === 'RL Agent') {
-            return `The RL Agent outperformed you by $${delta}. The RL agent's pre-trained policy allowed it to aggressively slash prices on Rainy/Cloudy days to steal vital market share, while maximizing margins during local events. Try to be more fluid with your pricing next time!`;
+            return `The Reinforcement Learning Agent outperformed you by $${delta}. The Reinforcement Learning Agent's pre-trained policy allowed it to aggressively slash prices on Rainy/Cloudy days to steal vital market share, while maximizing margins during local events. Try to be more fluid with your pricing next time!`;
         }
-        return `The ML Agent outperformed you! It relied on static linear weights, which means you might have been pricing too emotionally or inconsistently. Keep an eye on the baseline weather multipliers during the simulation.`;
+        return `The Machine Learning Agent outperformed you! It relied on static linear weights, which means you might have been pricing too emotionally or inconsistently. Keep an eye on the baseline weather multipliers during the simulation.`;
     };
+
+    // Calculate Policy Summary for the modal
+    const playerPolicyTable = useMemo(() => {
+        const playerPolicyMap = {};
+        history.filter(h => h.day !== 'Start').forEach(record => {
+            const stateKey = `${record.weather}_${record.nearbyEvent}_${record.competitorPresent}`;
+
+            if (!playerPolicyMap[stateKey]) {
+                const conditions = {
+                    weather: record.weather,
+                    nearbyEvent: record.nearbyEvent,
+                    competitorPresent: record.competitorPresent,
+                    competitorPrice: record.competitorOriginalPrice || record.competitorPrice
+                };
+                const { minPrice, maxPrice } = rlAgent.getOptimalRange(conditions);
+
+                playerPolicyMap[stateKey] = {
+                    weather: record.weather,
+                    event: record.nearbyEvent,
+                    competitor: record.competitorPresent,
+                    rlMinPrice: minPrice,
+                    rlMaxPrice: maxPrice,
+                    prices: []
+                };
+            }
+
+            if (record.playerPrice) {
+                playerPolicyMap[stateKey].prices.push(record.playerPrice);
+            }
+        });
+
+        return Object.values(playerPolicyMap).map(state => {
+            const minPrice = state.prices.length > 0 ? Math.min(...state.prices) : null;
+            const maxPrice = state.prices.length > 0 ? Math.max(...state.prices) : null;
+
+            return {
+                ...state,
+                minPrice,
+                maxPrice,
+                rlRangeString: state.rlMinPrice === state.rlMaxPrice
+                    ? `$${state.rlMinPrice?.toFixed(2)}`
+                    : `$${state.rlMinPrice?.toFixed(2)} - $${state.rlMaxPrice?.toFixed(2)}`,
+                count: state.prices.length
+            };
+        }).sort((a, b) => b.count - a.count).slice(0, 5); // Just show top 5 most frequent states
+    }, [history]);
+
     return (
         <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-hidden ${theme}`}>
             <motion.div
@@ -96,12 +144,12 @@ const EndGameModal = ({ isOpen, onRestart, history, theme, toggleTheme, shopName
                     </div>
 
                     {/* RL Feedback */}
-                    <div className="bg-coffee-800/50 p-4 rounded-xl border border-coffee-700/50 backdrop-blur-sm w-full mb-4 text-left">
-                        <h3 className="text-lg font-bold mb-2 flex items-center gap-2 text-coffee-100">
-                            <Lightbulb className="w-4 h-4 text-amber-500" />
+                    <div className="bg-coffee-800/50 p-6 rounded-xl border border-coffee-700/50 backdrop-blur-sm w-full mb-6 text-left shadow-inner">
+                        <h3 className="text-xl font-bold mb-3 flex items-center gap-3 text-coffee-100">
+                            <Lightbulb className="w-5 h-5 text-amber-500" />
                             Performance Analysis
                         </h3>
-                        <p className="text-coffee-300 text-sm leading-relaxed">
+                        <p className="text-coffee-300 text-base leading-relaxed">
                             {getFeedback()}
                         </p>
                     </div>
@@ -140,5 +188,6 @@ const EndGameModal = ({ isOpen, onRestart, history, theme, toggleTheme, shopName
         </div>
     );
 };
+
 
 export default EndGameModal;

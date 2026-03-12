@@ -1,250 +1,384 @@
-import marketStates from '../../market_states.json' with { type: 'json' };
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const NON_SUNNY_WEATHER = ['Cloudy', 'Rainy'];
+
+const LOCAL_EVENTS = [
+  'Music Concert',
+  'Movie Screening',
+  'Carnival',
+  'Food Fest',
+  'Local Marathon',
+  'Street Fair',
+  'Art Exhibition'
+];
+
+export const PRICE_MIN = 1;
+export const PRICE_MAX = 10;
+export const WEEKLY_START_INVENTORY = 5000;
+export const CUP_COST = 1;
+export const WASTAGE_COST_PER_CUP = 1.5;
+export const WEEKDAY_SALES_TARGET = 200;
+export const WEEKEND_SALES_TARGET = 250;
+export const LOW_SALES_PENALTY = 100;
 
 // Pre-calculated schedule for the 28-day simulation
 let mainGameSchedule = null;
 
-const LOCAL_EVENTS = [
-    "Music Concert",
-    "Movie Screening",
-    "Carnival",
-    "Food Fest",
-    "Local Marathon",
-    "Street Fair",
-    "Art Exhibition"
-];
+const SET_A_RANGES = {
+  1: [401, 450],
+  2: [351, 400],
+  3: [301, 350],
+  4: [251, 300],
+  5: [201, 250],
+  6: [151, 200],
+  7: [101, 150],
+  8: [51, 100],
+  9: [1, 50],
+  10: [0, 10]
+};
+
+const SET_B_RANGES = {
+  1: [551, 600],
+  2: [501, 550],
+  3: [451, 500],
+  4: [401, 450],
+  5: [351, 400],
+  6: [301, 350],
+  7: [251, 300],
+  8: [201, 250],
+  9: [151, 200],
+  10: [0, 150]
+};
+
+// Set E was provided with one duplicated price row in the spec.
+// Price 8 is merged as [3,7] so both cited sub-ranges are covered.
+const SET_E_RANGES = {
+  1: [251, 300],
+  2: [201, 250],
+  3: [151, 200],
+  4: [101, 150],
+  5: [13, 15],
+  6: [10, 13],
+  7: [8, 10],
+  8: [3, 7],
+  9: [1, 3],
+  10: [0, 0]
+};
+
+const SET_G_RANGES = {
+  1: [451, 500],
+  2: [401, 450],
+  3: [351, 400],
+  4: [301, 350],
+  5: [251, 300],
+  6: [201, 250],
+  7: [151, 200],
+  8: [101, 150],
+  9: [51, 100],
+  10: [0, 50]
+};
+
+const isWeekend = (dayName) => dayName === 'Saturday' || dayName === 'Sunday';
+const isWeekday = (dayName) => !isWeekend(dayName);
+
+const normalizeWeather = (weather) => {
+  const normalized = String(weather || '').trim().toLowerCase();
+  if (normalized === 'sunny') return 'Sunny';
+  if (normalized === 'cloudy') return 'Cloudy';
+  if (normalized === 'rainy') return 'Rainy';
+  return 'Sunny';
+};
+
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+const normalizePrice = (price) => {
+  const numeric = Number(price);
+  if (!Number.isFinite(numeric)) return PRICE_MIN;
+  return clamp(Math.round(numeric), PRICE_MIN, PRICE_MAX);
+};
+
+const normalizeCompetitorPrice = (price) => {
+  const numeric = Number(price);
+  if (!Number.isFinite(numeric)) return 0;
+  return clamp(Math.round(numeric), 3, 8);
+};
+
+const randomIntInclusive = (min, max) => {
+  const safeMin = Math.ceil(Math.min(min, max));
+  const safeMax = Math.floor(Math.max(min, max));
+  return Math.floor(Math.random() * (safeMax - safeMin + 1)) + safeMin;
+};
+
+const sampleFromRange = (range) => {
+  if (!Array.isArray(range) || range.length !== 2) return 0;
+  return randomIntInclusive(range[0], range[1]);
+};
 
 const getRandomEventName = () => LOCAL_EVENTS[Math.floor(Math.random() * LOCAL_EVENTS.length)];
 
-const evaluateFormula = (formula, context = {}) => {
-    if (!formula || typeof formula !== 'string') return 0;
+const getSetKey = (dayName, weather, nearbyEvent, competitorPresent) => {
+  const sunny = normalizeWeather(weather) === 'Sunny';
+  const weekday = isWeekday(dayName);
 
-    try {
-        const argNames = Object.keys(context);
-        const argValues = Object.values(context);
-        return Function(...argNames, `"use strict"; return (${formula});`)(...argValues);
-    } catch (error) {
-        console.warn('[MarketEngine] Formula evaluation failed:', formula, error);
-        return 0;
-    }
+  if (weekday && !sunny && !competitorPresent && !nearbyEvent) return 'A';
+  if (weekday && !sunny && !competitorPresent && nearbyEvent) return 'B';
+  if (weekday && !sunny && competitorPresent && !nearbyEvent) return 'C';
+  if (weekday && !sunny && competitorPresent && nearbyEvent) return 'D';
+  if (weekday && sunny && !competitorPresent && !nearbyEvent) return 'E';
+  if (!weekday && !sunny && competitorPresent && nearbyEvent) return 'F';
+  if (!weekday && sunny && !competitorPresent && nearbyEvent) return 'G';
+
+  return null;
 };
 
-const splitTopLevelByPlus = (formula) => {
-    const terms = [];
-    let depth = 0;
-    let start = 0;
+const getBaseDemandForSet = (setKey, price) => {
+  const p = normalizePrice(price);
 
-    for (let i = 0; i < formula.length; i++) {
-        const ch = formula[i];
-        if (ch === '(') depth += 1;
-        if (ch === ')') depth -= 1;
+  if (setKey === 'A' || setKey === 'C') return sampleFromRange(SET_A_RANGES[p]);
+  if (setKey === 'B' || setKey === 'D' || setKey === 'F') return sampleFromRange(SET_B_RANGES[p]);
+  if (setKey === 'E') return sampleFromRange(SET_E_RANGES[p]);
+  if (setKey === 'G') return sampleFromRange(SET_G_RANGES[p]);
 
-        if (ch === '+' && depth === 0) {
-            terms.push(formula.slice(start, i).trim());
-            start = i + 1;
-        }
-    }
-
-    terms.push(formula.slice(start).trim());
-    return terms.filter(Boolean);
+  return 0;
 };
 
-const findMatchingMarketState = (weather, nearbyEvent, competitorPresent, dayName) => {
-    return marketStates.find((s) =>
-        s.Weather.toLowerCase() === String(weather || '').toLowerCase() &&
-        s.Event.toLowerCase() === (nearbyEvent ? 'yes' : 'no') &&
-        s.Competitor.toLowerCase() === (competitorPresent ? 'yes' : 'no') &&
-        s['Day of the week'] === dayName
-    );
+const applyCompetitorAdjustment = (baseDemand, setKey, playerPrice, competitorPrice) => {
+  const p = normalizePrice(playerPrice);
+  const t = normalizeCompetitorPrice(competitorPrice);
+
+  let factor = 0;
+  if (setKey === 'C') factor = 20;
+  if (setKey === 'D') factor = 30;
+  if (setKey === 'F') factor = 50;
+
+  if (factor === 0) return baseDemand;
+
+  const diff = Math.abs(t - p);
+  const adjusted = t >= p
+    ? baseDemand + (diff * factor)
+    : baseDemand - (diff * factor);
+
+  return Math.max(0, Math.floor(adjusted));
 };
+
+const generateCompetitorPrice = () => randomIntInclusive(3, 8);
 
 const shuffleArray = (array) => {
-    const newArr = [...array];
-    for (let i = newArr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+  const next = [...array];
+  for (let i = next.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  return next;
+};
+
+const buildStateId = (state) => {
+  const compPart = state.competitorPresent ? String(state.competitorPrice) : 'NA';
+  return `${state.setKey}-${state.day}-${state.weather}-${state.nearbyEvent ? 1 : 0}-${state.competitorPresent ? 1 : 0}-${compPart}`;
+};
+
+const createRandomStateForDay = (dayName) => {
+  const weekday = isWeekday(dayName);
+
+  if (weekday) {
+    const sunny = Math.random() < 0.35;
+
+    if (sunny) {
+      const state = {
+        day: dayName,
+        weather: 'Sunny',
+        nearbyEvent: false,
+        competitorPresent: false,
+        competitorPrice: null,
+        eventName: null,
+        specialEvent: null,
+        setKey: 'E'
+      };
+      return { ...state, stateId: buildStateId(state) };
     }
-    return newArr;
+
+    const weather = NON_SUNNY_WEATHER[Math.floor(Math.random() * NON_SUNNY_WEATHER.length)];
+    const bucket = ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)];
+
+    const nearbyEvent = bucket === 'B' || bucket === 'D';
+    const competitorPresent = bucket === 'C' || bucket === 'D';
+
+    const state = {
+      day: dayName,
+      weather,
+      nearbyEvent,
+      competitorPresent,
+      competitorPrice: competitorPresent ? generateCompetitorPrice() : null,
+      eventName: nearbyEvent ? getRandomEventName() : null,
+      specialEvent: null,
+      setKey: bucket
+    };
+    return { ...state, stateId: buildStateId(state) };
+  }
+
+  const sunny = Math.random() < 0.5;
+
+  if (sunny) {
+    const state = {
+      day: dayName,
+      weather: 'Sunny',
+      nearbyEvent: true,
+      competitorPresent: false,
+      competitorPrice: null,
+      eventName: getRandomEventName(),
+      specialEvent: null,
+      setKey: 'G'
+    };
+    return { ...state, stateId: buildStateId(state) };
+  }
+
+  const weather = NON_SUNNY_WEATHER[Math.floor(Math.random() * NON_SUNNY_WEATHER.length)];
+  const state = {
+    day: dayName,
+    weather,
+    nearbyEvent: true,
+    competitorPresent: true,
+    competitorPrice: generateCompetitorPrice(),
+    eventName: getRandomEventName(),
+    specialEvent: null,
+    setKey: 'F'
+  };
+  return { ...state, stateId: buildStateId(state) };
+};
+
+const scheduleMeetsWeeklyConstraints = (schedule) => {
+  for (let week = 0; week < 4; week++) {
+    const weekSlice = schedule.slice(week * 7, (week + 1) * 7);
+    const competitorDays = weekSlice.filter((s) => s.competitorPresent).length;
+    const eventDays = weekSlice.filter((s) => s.nearbyEvent).length;
+    if (competitorDays < 3 || eventDays < 1) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const buildConstrainedMainSchedule = () => {
+  let attempts = 0;
+  while (attempts < 500) {
+    attempts += 1;
+
+    const statesByDay = {};
+    for (const dayName of DAYS) {
+      const first = createRandomStateForDay(dayName);
+      let second = createRandomStateForDay(dayName);
+      let guard = 0;
+      while (buildStateId(second) === buildStateId(first) && guard < 20) {
+        second = createRandomStateForDay(dayName);
+        guard += 1;
+      }
+      statesByDay[dayName] = shuffleArray([first, first, second, second]);
+    }
+
+    const candidate = [];
+    for (let i = 0; i < 28; i++) {
+      const dayName = DAYS[i % 7];
+      const weekIndex = Math.floor(i / 7);
+      const baseState = statesByDay[dayName][weekIndex];
+      candidate.push({
+        ...baseState,
+        dayNumber: i + 1,
+        stateId: buildStateId(baseState)
+      });
+    }
+
+    if (scheduleMeetsWeeklyConstraints(candidate)) {
+      return candidate;
+    }
+  }
+
+  // Defensive fallback: still return a valid 28-day schedule structure.
+  return Array.from({ length: 28 }, (_, idx) => {
+    const dayName = DAYS[idx % 7];
+    const state = createRandomStateForDay(dayName);
+    return { ...state, dayNumber: idx + 1, stateId: buildStateId(state) };
+  });
 };
 
 export const initMainGameSchedule = (forceReset = false) => {
-    if (mainGameSchedule && !forceReset) return mainGameSchedule;
-
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const statesByDay = {};
-    days.forEach(d => {
-        statesByDay[d] = marketStates.filter(s => s['Day of the week'] === d);
-    });
-
-    let validSchedule = false;
-    let attempts = 0;
-    let newSchedule = new Array(28);
-
-    while (!validSchedule && attempts < 100) {
-        attempts++;
-        const chosenPairs = {};
-
-        // For each day of the week, pick 2 states and repeat each twice
-        days.forEach(dayName => {
-            const available = statesByDay[dayName];
-            const idx1 = Math.floor(Math.random() * available.length);
-            let idx2 = Math.floor(Math.random() * available.length);
-            while (idx2 === idx1) idx2 = Math.floor(Math.random() * available.length);
-
-            const states = [available[idx1], available[idx1], available[idx2], available[idx2]];
-            chosenPairs[dayName] = shuffleArray(states);
-        });
-
-        // Fill the 28-day schedule
-        for (let i = 0; i < 28; i++) {
-            const dayName = days[i % 7];
-            const weekIdx = Math.floor(i / 7);
-            newSchedule[i] = { ...chosenPairs[dayName][weekIdx], dayNumber: i + 1 };
-        }
-
-        // Validate constraints per week
-        let allWeeksValid = true;
-        for (let w = 0; w < 4; w++) {
-            const weekSlice = newSchedule.slice(w * 7, (w + 1) * 7);
-            const compCount = weekSlice.filter(s => s.Competitor.toLowerCase() === 'yes').length;
-            const eventCount = weekSlice.filter(s => s.Event.toLowerCase() === 'yes').length;
-
-            if (compCount < 3 || eventCount < 1) {
-                allWeeksValid = false;
-                break;
-            }
-        }
-
-        if (allWeeksValid) {
-            validSchedule = true;
-        }
-    }
-
-    mainGameSchedule = newSchedule;
-    return mainGameSchedule;
+  if (mainGameSchedule && !forceReset) return mainGameSchedule;
+  mainGameSchedule = buildConstrainedMainSchedule();
+  return mainGameSchedule;
 };
 
-export const calculateDemand = (price, weather, nearbyEvent, day, competitorPresent, competitorPrice, yesterdayPrice = null) => {
-    const state = findMatchingMarketState(weather, nearbyEvent, competitorPresent, day);
-    const context = {
-        price,
-        yesterday_price: yesterdayPrice ?? 4.50,
-        competitor_price: competitorPrice || 0,
-        inventory: 1500
-    };
+export const calculateDemand = (price, weather, nearbyEvent, day, competitorPresent, competitorPrice) => {
+  const normalizedDay = DAYS.includes(day) ? day : DAYS[0];
+  const normalizedWeather = normalizeWeather(weather);
+  const normalizedNearbyEvent = Boolean(nearbyEvent);
+  const normalizedCompetitorPresent = Boolean(competitorPresent);
+  const normalizedPrice = normalizePrice(price);
 
-    if (state?.Footfall) {
-        const demand = evaluateFormula(state.Footfall, context);
-        return Math.max(0, Math.floor(Number(demand) || 0));
-    }
+  const setKey = getSetKey(normalizedDay, normalizedWeather, normalizedNearbyEvent, normalizedCompetitorPresent);
+  if (!setKey) return 0;
 
-    return 0;
+  const baseDemand = getBaseDemandForSet(setKey, normalizedPrice);
+  const finalDemand = applyCompetitorAdjustment(baseDemand, setKey, normalizedPrice, competitorPrice);
+
+  return Math.max(0, Math.floor(finalDemand));
 };
 
 export const calculateSales = (demand, inventory) => {
-    return Math.min(demand, inventory);
+  const safeDemand = Math.max(0, Math.floor(Number(demand) || 0));
+  const safeInventory = Math.max(0, Math.floor(Number(inventory) || 0));
+  return Math.min(safeDemand, safeInventory);
+};
+
+export const calculateDailyPenalty = (sales, dayName) => {
+  const sold = Math.max(0, Math.floor(Number(sales) || 0));
+
+  if (isWeekend(dayName)) {
+    return sold < WEEKEND_SALES_TARGET ? LOW_SALES_PENALTY : 0;
+  }
+
+  return sold < WEEKDAY_SALES_TARGET ? LOW_SALES_PENALTY : 0;
+};
+
+export const calculateDailyProfit = (sales, price, dayName) => {
+  const sold = Math.max(0, Math.floor(Number(sales) || 0));
+  const normalizedPrice = normalizePrice(price);
+  const gross = sold * normalizedPrice;
+  const cogs = sold * CUP_COST;
+  const baseProfit = gross - cogs;
+  const penalty = calculateDailyPenalty(sold, dayName);
+  return {
+    gross,
+    cogs,
+    penalty,
+    netProfit: baseProfit - penalty
+  };
+};
+
+export const calculateWeekWastagePenalty = (remainingInventory) => {
+  const safeInventory = Math.max(0, Math.floor(Number(remainingInventory) || 0));
+  return safeInventory * WASTAGE_COST_PER_CUP;
 };
 
 export const generateDailyConditions = (dayNumber) => {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const dayName = days[(dayNumber - 1) % 7];
-    const weatherPattern = ['Sunny', 'Cloudy', 'Rainy', 'Sunny', 'Sunny', 'Rainy', 'Cloudy'];
-    const weather = weatherPattern[(dayNumber - 1) % 7];
-    const nearbyEvent = dayName === 'Friday' || dayName === 'Saturday';
-    const competitorPresent = ['Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(dayName);
-
-    let competitorPrice = null;
-    if (competitorPresent) {
-        const w = weather.toLowerCase();
-        if (w === 'rainy') {
-            competitorPrice = [4.50, 5.00, 5.50][Math.floor(Math.random() * 3)];
-        } else if (w === 'cloudy') {
-            competitorPrice = [5.50, 6.00, 6.50][Math.floor(Math.random() * 3)];
-        } else if (w === 'sunny') {
-            competitorPrice = [4.00, 4.50, 5.00][Math.floor(Math.random() * 3)];
-        } else {
-            competitorPrice = 4.00;
-        }
-
-        if (dayName === 'Saturday' || dayName === 'Sunday') competitorPrice += [0.50, 1.00][Math.floor(Math.random() * 2)];
-        if (nearbyEvent) competitorPrice += [0.50, 1.00][Math.floor(Math.random() * 2)];
-    }
-
-    const eventName = nearbyEvent ? getRandomEventName() : null;
-
-    return { day: dayName, weather, nearbyEvent, eventName, competitorPresent, competitorPrice };
+  const safeDayNumber = Math.max(1, Math.floor(Number(dayNumber) || 1));
+  const dayName = DAYS[(safeDayNumber - 1) % 7];
+  return {
+    ...createRandomStateForDay(dayName),
+    dayNumber: safeDayNumber
+  };
 };
 
 export const generateMainGameConditions = (dayNumber) => {
-    const schedule = initMainGameSchedule();
-    const state = schedule[dayNumber - 1];
-
-    // Map Competitor Price if needed (it wasn't in the JSON, we should generate it if Competitor is "yes")
-    let competitorPrice = null;
-    if (state.Competitor.toLowerCase() === 'yes') {
-        const w = state.Weather.toLowerCase();
-        if (w === 'rainy') {
-            competitorPrice = [4.50, 5.00, 5.50][Math.floor(Math.random() * 3)];
-        } else if (w === 'cloudy') {
-            competitorPrice = [5.50, 6.00, 6.50][Math.floor(Math.random() * 3)];
-        } else {
-            competitorPrice = [4.00, 4.50, 5.00][Math.floor(Math.random() * 3)];
-        }
-
-        if (state['Day of the week'] === 'Saturday' || state['Day of the week'] === 'Sunday') {
-            competitorPrice += [0.50, 1.00][Math.floor(Math.random() * 2)];
-        }
-        if (state.Event.toLowerCase() === 'yes') {
-            competitorPrice += [0.50, 1.00][Math.floor(Math.random() * 2)];
-        }
-    }
-
-    return {
-        dayNumber,
-        day: state['Day of the week'],
-        weather: state.Weather.charAt(0).toUpperCase() + state.Weather.slice(1),
-        nearbyEvent: state.Event.toLowerCase() === 'yes',
-        competitorPresent: state.Competitor.toLowerCase() === 'yes',
-        competitorPrice,
-        eventName: state.Event.toLowerCase() === 'yes' ? getRandomEventName() : null,
-        specialEvent: null, // We can add back random excuses if desired, but user didn't ask
-        stateId: state.Weather + state.Event + state.Competitor + state['Day of the week'] // Include day for specific matching
-    };
+  const schedule = initMainGameSchedule();
+  const index = Math.max(0, Math.min(27, Math.floor(Number(dayNumber) || 1) - 1));
+  return { ...schedule[index] };
 };
 
-export const calculateReward = (dailyProfit, remainingInventory, dayName, playerPrice, competitorPresent, competitorPrice, yesterdayPrice, weather, nearbyEvent) => {
-    let totalScore = 0;
-    let rewardPoints = 0;
-    let penaltyPoints = 0;
-
-    const state = findMatchingMarketState(weather, nearbyEvent, competitorPresent, dayName);
-    const context = {
-        profit: dailyProfit,
-        inventory: remainingInventory,
-        price: playerPrice,
-        competitor_price: competitorPrice || 0,
-        yesterday_price: yesterdayPrice ?? 4.50
-    };
-
-    if (state?.Rewards) {
-        const total = Number(evaluateFormula(state.Rewards, context)) || 0;
-        totalScore = total;
-
-        const rewardTerms = splitTopLevelByPlus(state.Rewards);
-        rewardTerms.forEach((term) => {
-            const val = Number(evaluateFormula(term, context)) || 0;
-            if (val >= 0) rewardPoints += val;
-            else penaltyPoints += Math.abs(val);
-        });
-    } else {
-        totalScore = dailyProfit;
-        rewardPoints = Math.max(0, dailyProfit);
-        penaltyPoints = Math.max(0, -dailyProfit);
-    }
-
-    return {
-        total: parseFloat(totalScore.toFixed(2)),
-        rewardPoints: parseFloat(rewardPoints.toFixed(2)),
-        penaltyPoints: parseFloat(penaltyPoints.toFixed(2))
-    };
+export const calculateReward = (dailyNetProfit) => {
+  const value = Number(dailyNetProfit) || 0;
+  return {
+    total: parseFloat(value.toFixed(2)),
+    rewardPoints: parseFloat(Math.max(0, value).toFixed(2)),
+    penaltyPoints: parseFloat(Math.max(0, -value).toFixed(2))
+  };
 };
 
+export const getNormalizedPrice = (price) => normalizePrice(price);

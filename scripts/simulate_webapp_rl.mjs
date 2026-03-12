@@ -1,10 +1,15 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import {
   initMainGameSchedule,
   generateMainGameConditions,
   calculateDemand,
   calculateSales,
-  calculateReward,
-} from "../src/logic/MarketEngine.js";
+  calculateDailyProfit,
+  calculateWeekWastagePenalty,
+  getNormalizedPrice,
+  WEEKLY_START_INVENTORY
+} from '../src/logic/MarketEngine.js';
 
 const DAY_MAP = {
   Monday: 0,
@@ -13,13 +18,65 @@ const DAY_MAP = {
   Thursday: 3,
   Friday: 4,
   Saturday: 5,
-  Sunday: 6,
+  Sunday: 6
 };
 
 const WEATHER_MAP = {
   Sunny: 0,
   Cloudy: 1,
-  Rainy: 2,
+  Rainy: 2
+};
+
+const CSV_PATH = path.resolve(process.cwd(), '..', 'rl_28_day_simulation_results.csv');
+
+const escapeCsv = (value) => {
+  const str = value === null || value === undefined ? '' : String(value);
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replaceAll('"', '""')}"`;
+  }
+  return str;
+};
+
+const getStateSignature = (s) => {
+  const comp = s.competitorPresent ? s.competitorPrice : 'NA';
+  return `${s.day}-${s.weather}-${s.nearbyEvent ? 1 : 0}-${s.competitorPresent ? 1 : 0}-${comp}`;
+};
+
+const verifyScheduleConstraints = (schedule) => {
+  const dayCounts = {};
+  const perDayStates = {};
+
+  for (const s of schedule) {
+    dayCounts[s.day] = (dayCounts[s.day] || 0) + 1;
+    if (!perDayStates[s.day]) perDayStates[s.day] = {};
+    const sig = getStateSignature(s);
+    perDayStates[s.day][sig] = (perDayStates[s.day][sig] || 0) + 1;
+  }
+
+  const exactFourEachDay = Object.values(dayCounts).every((count) => count === 4);
+
+  const repeatedStatePerDay = Object.values(perDayStates).every((countsObj) =>
+    Object.values(countsObj).some((count) => count >= 2)
+  );
+
+  const weeklyChecks = [];
+  let weeklyOk = true;
+  for (let week = 0; week < 4; week++) {
+    const slice = schedule.slice(week * 7, (week + 1) * 7);
+    const competitorDays = slice.filter((s) => s.competitorPresent).length;
+    const eventDays = slice.filter((s) => s.nearbyEvent).length;
+    const ok = competitorDays >= 3 && eventDays >= 1;
+    weeklyChecks.push({ week: week + 1, competitorDays, eventDays, ok });
+    if (!ok) weeklyOk = false;
+  }
+
+  return {
+    exactFourEachDay,
+    repeatedStatePerDay,
+    weeklyOk,
+    weeklyChecks,
+    overall: exactFourEachDay && repeatedStatePerDay && weeklyOk
+  };
 };
 
 async function getRlPrice(conditions, dayNumber, inventory, yesterdayPrice) {
@@ -31,138 +88,122 @@ async function getRlPrice(conditions, dayNumber, inventory, yesterdayPrice) {
     nearby_event: conditions.nearbyEvent ? 1 : 0,
     competitor_present: conditions.competitorPresent ? 1 : 0,
     competitor_price: conditions.competitorPrice || 0,
-    yesterday_price: yesterdayPrice,
+    yesterday_price: yesterdayPrice
   };
 
   try {
-    const response = await fetch("http://127.0.0.1:5001/predict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+    const response = await fetch('http://127.0.0.1:5001/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
-    return { price: Number(data.suggested_price), source: "backend" };
-  } catch (error) {
-    // Matches frontend RLAgent fallback behavior
-    return { price: 5.5, source: "fallback" };
+    return { price: getNormalizedPrice(Number(data.suggested_price)), source: 'backend' };
+  } catch {
+    return { price: 5, source: 'fallback' };
   }
 }
 
 async function main() {
-  initMainGameSchedule(true);
+  const schedule = initMainGameSchedule(true);
+  const constraints = verifyScheduleConstraints(schedule);
 
-  let day = 1;
-  let rlInventory = 1500;
-  let yesterdayRlPrice = 4.5;
-  let totalProfit = 0;
-  let totalReward = 0;
+  if (!constraints.overall) {
+    throw new Error(`Schedule constraints failed: ${JSON.stringify(constraints)}`);
+  }
+
+  let inventory = WEEKLY_START_INVENTORY;
+  let yesterdayRlPrice = 5;
+  let totalCumulativeProfit = 0;
+  let weeklyCumulativeProfit = 0;
 
   const rows = [];
   const sourceCount = { backend: 0, fallback: 0 };
 
-  while (day <= 28) {
+  for (let day = 1; day <= 28; day++) {
     const conditions = generateMainGameConditions(day);
-    const rl = await getRlPrice(conditions, day, rlInventory, yesterdayRlPrice);
+    const weekNumber = Math.floor((day - 1) / 7) + 1;
+
+    const rl = await getRlPrice(conditions, day, inventory, yesterdayRlPrice);
     sourceCount[rl.source] += 1;
 
-    const rlDemand = calculateDemand(
+    const demand = calculateDemand(
       rl.price,
       conditions.weather,
       conditions.nearbyEvent,
       conditions.day,
       conditions.competitorPresent,
-      conditions.competitorPrice,
-      yesterdayRlPrice
+      conditions.competitorPrice
     );
 
-    const rlSales = calculateSales(rlDemand, rlInventory);
-    const rlRevenue = rlSales * rl.price;
-    const rlDailyProfit = rlRevenue - rlSales;
-    const nextRlInv = rlInventory - rlSales;
+    const sales = calculateSales(demand, inventory);
+    const profitBreakdown = calculateDailyProfit(sales, rl.price, conditions.day);
 
-    const rewardData = calculateReward(
-      rlDailyProfit,
-      nextRlInv,
-      conditions.day,
-      rl.price,
-      conditions.competitorPresent,
-      conditions.competitorPrice,
-      yesterdayRlPrice,
-      conditions.weather,
-      conditions.nearbyEvent
-    );
+    let sundayWastagePenalty = 0;
+    const inventoryEndBeforeReset = inventory - sales;
 
-    let actualNextRlInv = nextRlInv;
-    let autoRestockPenalty = 0;
-
-    // Mirrors Dashboard AI restock behavior
-    if (day < 28 && day % 7 !== 0 && nextRlInv <= 50) {
-      actualNextRlInv = 200 + nextRlInv;
-      autoRestockPenalty = 275;
+    if (day % 7 === 0) {
+      sundayWastagePenalty = calculateWeekWastagePenalty(inventoryEndBeforeReset);
     }
 
-    const weeklyStoragePenalty = day % 7 === 0 ? nextRlInv * 0.5 : 0;
+    const dailyNetProfit = profitBreakdown.netProfit - sundayWastagePenalty;
+
+    totalCumulativeProfit += dailyNetProfit;
+    weeklyCumulativeProfit += dailyNetProfit;
 
     rows.push({
-      day,
-      dow: conditions.day,
+      dayNumber: day,
+      weekNumber,
+      dayOfWeek: conditions.day,
       weather: conditions.weather,
-      event: conditions.nearbyEvent ? "Y" : "N",
-      comp: conditions.competitorPresent
-        ? `Y(${conditions.competitorPrice.toFixed(2)})`
-        : "N",
-      invStart: rlInventory,
+      nearbyEvent: conditions.nearbyEvent ? 1 : 0,
+      eventName: conditions.eventName || '',
+      competitorPresent: conditions.competitorPresent ? 1 : 0,
+      competitorPrice: conditions.competitorPresent ? conditions.competitorPrice : '',
+      scheduleStateId: conditions.stateId,
+      inventoryStart: inventory,
       rlPrice: rl.price,
       source: rl.source,
-      demand: rlDemand,
-      sales: rlSales,
-      profit: rlDailyProfit,
-      reward: rewardData.total,
-      nextInv: nextRlInv,
-      autoRestockPenalty,
-      weeklyStoragePenalty,
+      demand,
+      sales,
+      grossRevenue: profitBreakdown.gross,
+      cogs: profitBreakdown.cogs,
+      dailyLowSalesPenalty: profitBreakdown.penalty,
+      sundayWastagePenalty,
+      dailyNetProfit,
+      weeklyCumulativeProfit,
+      totalCumulativeProfit,
+      inventoryEnd: inventoryEndBeforeReset
     });
 
-    totalProfit += rlDailyProfit;
-    totalReward += rewardData.total;
     yesterdayRlPrice = rl.price;
 
-    day += 1;
-    rlInventory = day % 7 === 1 ? 1500 : actualNextRlInv;
+    if (day % 7 === 0) {
+      inventory = WEEKLY_START_INVENTORY;
+      weeklyCumulativeProfit = 0;
+    } else {
+      inventory = inventoryEndBeforeReset;
+    }
   }
 
-  console.log(
-    "Day | DOW | Wth | Ev | Comp | InvStart | RLPrice | Src | Demand | Sales | Profit | Reward | NextInv | AIPen | WeekPen"
-  );
-  rows.forEach((r) => {
-    console.log(
-      `${String(r.day).padStart(2)} | ${r.dow.padEnd(9)} | ${r.weather.padEnd(
-        6
-      )} | ${r.event} | ${r.comp.padEnd(8)} | ${String(r.invStart).padStart(
-        8
-      )} | ${r.rlPrice.toFixed(2).padStart(7)} | ${r.source.padEnd(
-        8
-      )} | ${String(r.demand).padStart(6)} | ${String(r.sales).padStart(
-        5
-      )} | ${String(Math.round(r.profit)).padStart(6)} | ${String(
-        Math.round(r.reward)
-      ).padStart(6)} | ${String(r.nextInv).padStart(7)} | ${String(
-        r.autoRestockPenalty
-      ).padStart(5)} | ${String(Math.round(r.weeklyStoragePenalty)).padStart(7)}`
-    );
-  });
+  const header = Object.keys(rows[0]);
+  const csvLines = [
+    header.join(','),
+    ...rows.map((row) => header.map((k) => escapeCsv(row[k])).join(','))
+  ];
 
-  const uniquePrices = [...new Set(rows.map((r) => r.rlPrice.toFixed(2)))];
-  console.log(`\nUnique RL prices: ${uniquePrices.join(", ")}`);
+  await fs.writeFile(CSV_PATH, csvLines.join('\n') + '\n', 'utf8');
+
+  console.log(`Saved CSV: ${CSV_PATH}`);
   console.log(`Source counts: backend=${sourceCount.backend}, fallback=${sourceCount.fallback}`);
-  console.log(`Total Profit (raw daily sum): ${totalProfit.toFixed(2)}`);
-  console.log(`Total Reward sum: ${totalReward.toFixed(2)}`);
+  console.log(`Total cumulative profit: ${totalCumulativeProfit.toFixed(2)}`);
+  console.log(`Schedule checks: ${JSON.stringify(constraints)}`);
 }
 
 main().catch((err) => {
-  console.error("Simulation failed:", err);
+  console.error('Simulation failed:', err.message || err);
   process.exit(1);
 });

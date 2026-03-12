@@ -5,7 +5,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import ProfitChart from './ProfitChart';
 
-const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRestart }) => {
+const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRestart, onGoToQuiz }) => {
     const reportRef = useRef(null);
     const [isExporting, setIsExporting] = useState(false);
 
@@ -186,6 +186,18 @@ const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRest
                 <div className="flex items-center gap-3 mb-8">
                     <TableProperties className="w-8 h-8 text-emerald-400" />
                     <h2 className="text-3xl font-bold text-coffee-100">Reinforcement Learning Optimal Policy Review</h2>
+                </div>
+
+                <div className="w-full mb-8 bg-coffee-800/70 border border-coffee-700 rounded-xl p-4">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <p className="text-sm text-coffee-200">Optional: test your understanding with one quick policy question.</p>
+                        <button
+                            onClick={onGoToQuiz}
+                            className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-coffee-950 font-bold text-sm transition-colors"
+                        >
+                            Go to Quiz
+                        </button>
+                    </div>
                 </div>
 
                 {/* Final Chart Stretched - NOW USING PROFIT CHART */}

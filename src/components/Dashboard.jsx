@@ -10,14 +10,19 @@ import WeeklyReportModal from "./WeeklyReportModal";
 import WeatherEffects from "./WeatherEffects";
 import EmergencyRestockModal from "./EmergencyRestockModal";
 import PolicyReviewPage from "./PolicyReviewPage";
+import PolicyQuizPage from "./PolicyQuizPage";
 
 import {
   calculateDemand,
   calculateSales,
   generateMainGameConditions,
-  calculateReward
+  calculateReward,
+  calculateDailyProfit,
+  calculateWeekWastagePenalty,
+  getNormalizedPrice,
+  WEEKLY_START_INVENTORY
 } from "../logic/MarketEngine";
-import { getMLPrice, getMLFormula, initMLModel } from "../logic/MLAgent";
+import { getMLPrice, initMLModel } from "../logic/MLAgent";
 import { rlAgent } from "../logic/RLAgent";
 
 const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvatar = 'Leo' }) => {
@@ -25,13 +30,13 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
   // Game State
   const [day, setDay] = useState(1);
   const [conditions, setConditions] = useState(generateMainGameConditions(1));
-  const [playerPrice, setPlayerPrice] = useState(4.5);
+  const [playerPrice, setPlayerPrice] = useState(5);
 
   // Independent Weekly Inventories for Phase 2
-  const [playerInventory, setPlayerInventory] = useState(1500);
-  const [mlInventory, setMlInventory] = useState(1500);
-  const [rlInventory, setRlInventory] = useState(1500);
-  const [competitorInventory, setCompetitorInventory] = useState(1500);
+  const [playerInventory, setPlayerInventory] = useState(WEEKLY_START_INVENTORY);
+  const [mlInventory, setMlInventory] = useState(WEEKLY_START_INVENTORY);
+  const [rlInventory, setRlInventory] = useState(WEEKLY_START_INVENTORY);
+  const [competitorInventory, setCompetitorInventory] = useState(WEEKLY_START_INVENTORY);
 
   const [history, setHistory] = useState([
     {
@@ -45,9 +50,9 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
     },
   ]);
 
-  const [mlSuggestion, setMLSuggestion] = useState(5.5);
+  const [mlSuggestion, setMLSuggestion] = useState(5);
   const [rlSuggestion, setRLSuggestion] = useState({
-    price: 5.5,
+    price: 5,
     action: "medium",
     isExploring: false,
   });
@@ -63,6 +68,9 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
   const [feedback, setFeedback] = useState(null);
   const [pendingWeeklyStats, setPendingWeeklyStats] = useState(null);
   const [showPolicyPage, setShowPolicyPage] = useState(false);
+  const [showPolicyQuizPage, setShowPolicyQuizPage] = useState(false);
+
+  const toGamePrice = (value) => getNormalizedPrice(value);
 
   // Dynamic Memory Recall
   const getMemoryRecall = () => {
@@ -113,7 +121,7 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
       mlInventory,
       history[history.length - 1]?.mlPrice || 4.50
     );
-    setMLSuggestion(mlP);
+    setMLSuggestion(toGamePrice(mlP));
 
     // RL prediction (using backend logic)
     const rlResult = await rlAgent.getAction(
@@ -121,7 +129,10 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
       history[history.length - 1]?.rlPrice || 4.50
     );
     if (rlResult && rlResult.price !== undefined) {
-      setRLSuggestion(rlResult);
+      setRLSuggestion({
+        ...rlResult,
+        price: toGamePrice(rlResult.price)
+      });
     }
   };
 
@@ -131,99 +142,107 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
   }, [conditions, mlReady]);
 
   const handleStartDay = () => {
-    if (!gameActive) return;
+    if (!gameActive || showPopup) return;
 
-    // 1. Calculate Player Results
+    const normalizedPlayerPrice = toGamePrice(playerPrice);
+    const normalizedMlPrice = toGamePrice(mlSuggestion);
+    const normalizedRlPrice = toGamePrice(rlSuggestion.price);
+
+    if (normalizedPlayerPrice !== playerPrice) {
+      setPlayerPrice(normalizedPlayerPrice);
+    }
+
+    const currentConditions = { ...conditions };
+    const lastRecord = history[history.length - 1];
+
     const playerDemand = calculateDemand(
-      playerPrice,
-      conditions.weather,
-      conditions.nearbyEvent,
-      conditions.day,
-      conditions.competitorPresent,
-      conditions.competitorPrice,
-      history[history.length - 1].playerPrice
+      normalizedPlayerPrice,
+      currentConditions.weather,
+      currentConditions.nearbyEvent,
+      currentConditions.day,
+      currentConditions.competitorPresent,
+      currentConditions.competitorPrice
     );
     const playerSales = calculateSales(playerDemand, playerInventory);
-    const playerRevenue = playerSales * playerPrice;
 
-    // 2. Calculate ML Results
-    const mlPrice = mlSuggestion;
     const mlDemand = calculateDemand(
-      mlPrice,
-      conditions.weather,
-      conditions.nearbyEvent,
-      conditions.day,
-      conditions.competitorPresent,
-      conditions.competitorPrice,
-      history[history.length - 1].mlPrice
+      normalizedMlPrice,
+      currentConditions.weather,
+      currentConditions.nearbyEvent,
+      currentConditions.day,
+      currentConditions.competitorPresent,
+      currentConditions.competitorPrice
     );
-    // ML act on its own inventory
     const mlSales = calculateSales(mlDemand, mlInventory);
-    const mlRevenue = mlSales * mlPrice;
 
-    // 3. Calculate RL Results
-    const rlPrice = rlSuggestion.price;
     const rlDemand = calculateDemand(
-      rlPrice,
-      conditions.weather,
-      conditions.nearbyEvent,
-      conditions.day,
-      conditions.competitorPresent,
-      conditions.competitorPrice,
-      history[history.length - 1].rlPrice
+      normalizedRlPrice,
+      currentConditions.weather,
+      currentConditions.nearbyEvent,
+      currentConditions.day,
+      currentConditions.competitorPresent,
+      currentConditions.competitorPrice
     );
     const rlSales = calculateSales(rlDemand, rlInventory);
-    const rlRevenue = rlSales * rlPrice;
 
-    const playerDailyProfit = playerRevenue - (playerSales * 1.00);
-    const mlDailyProfit = mlRevenue - (mlSales * 1.00);
-    const rlDailyProfit = rlRevenue - (rlSales * 1.00);
+    const normalizedCompetitorPrice = currentConditions.competitorPrice ? toGamePrice(currentConditions.competitorPrice) : null;
 
-    // Capture condition states for the log
-    const currentConditions = { ...conditions };
-
-    // 4. Update RL Agent (Learning Disabled in Phase 2, policy is fixed)
-
-    // 5. Calculate Competitor Benchmark (Approximation)
-    let compRevenue = 0;
     let compSales = 0;
-    if (conditions.competitorPresent && conditions.competitorPrice) {
-      // The competitor is just another genuine seller in the exact same market.
-      // Their demand is calculated identically, treating the player as *their* competitor.
+    if (currentConditions.competitorPresent && normalizedCompetitorPrice !== null) {
       const cDemand = calculateDemand(
-        conditions.competitorPrice,
-        conditions.weather,
-        conditions.nearbyEvent,
-        conditions.day,
-        true, // Player is present
-        playerPrice, // Player's price acts as the competitor price against them
-        history[history.length - 1].competitorPrice
+        normalizedCompetitorPrice,
+        currentConditions.weather,
+        currentConditions.nearbyEvent,
+        currentConditions.day,
+        true,
+        normalizedPlayerPrice
       );
-
-      // Apply Inventory Cap (Fairness)
-      compSales = Math.min(Math.floor(cDemand), competitorInventory);
-      compRevenue = compSales * conditions.competitorPrice;
+      compSales = calculateSales(cDemand, competitorInventory);
     }
-    const compDailyProfit = compRevenue - (compSales * 1.00);
 
-    // 6. Deduct Inventories Early to calculate Reward
+    const playerBreakdown = calculateDailyProfit(playerSales, normalizedPlayerPrice, currentConditions.day);
+    const mlBreakdown = calculateDailyProfit(mlSales, normalizedMlPrice, currentConditions.day);
+    const rlBreakdown = calculateDailyProfit(rlSales, normalizedRlPrice, currentConditions.day);
+
+    const compBreakdown = (currentConditions.competitorPresent && normalizedCompetitorPrice !== null)
+      ? calculateDailyProfit(compSales, normalizedCompetitorPrice, currentConditions.day)
+      : { gross: 0, cogs: 0, penalty: 0, netProfit: 0 };
+
     const nextPlayerInv = playerInventory - playerSales;
     const nextMlInv = mlInventory - mlSales;
     const nextRlInv = rlInventory - rlSales;
     const nextCompInv = competitorInventory - compSales;
 
-    const playerRewardData = calculateReward(playerDailyProfit, nextPlayerInv, conditions.day, playerPrice, conditions.competitorPresent, conditions.competitorPrice, history[history.length - 1].playerPrice, conditions.weather, conditions.nearbyEvent);
-    const mlRewardData = calculateReward(mlDailyProfit, nextMlInv, conditions.day, mlPrice, conditions.competitorPresent, conditions.competitorPrice, history[history.length - 1].mlPrice, conditions.weather, conditions.nearbyEvent);
-    const rlRewardData = calculateReward(rlDailyProfit, nextRlInv, conditions.day, rlPrice, conditions.competitorPresent, conditions.competitorPrice, history[history.length - 1].rlPrice, conditions.weather, conditions.nearbyEvent);
+    let playerDailyProfit = playerBreakdown.netProfit;
+    let mlDailyProfit = mlBreakdown.netProfit;
+    let rlDailyProfit = rlBreakdown.netProfit;
+    let compDailyProfit = compBreakdown.netProfit;
+
+    let playerPenalty = 0;
+    let mlPenalty = 0;
+    let rlPenalty = 0;
+    let competitorPenalty = 0;
+
+    if (day % 7 === 0) {
+      playerPenalty = calculateWeekWastagePenalty(nextPlayerInv);
+      mlPenalty = calculateWeekWastagePenalty(nextMlInv);
+      rlPenalty = calculateWeekWastagePenalty(nextRlInv);
+      competitorPenalty = calculateWeekWastagePenalty(nextCompInv);
+
+      playerDailyProfit -= playerPenalty;
+      mlDailyProfit -= mlPenalty;
+      rlDailyProfit -= rlPenalty;
+      compDailyProfit -= competitorPenalty;
+    }
+
+    const playerRewardData = calculateReward(playerDailyProfit);
+    const mlRewardData = calculateReward(mlDailyProfit);
+    const rlRewardData = calculateReward(rlDailyProfit);
 
     const playerDailyReward = playerRewardData.total;
     const mlDailyReward = mlRewardData.total;
     const rlDailyReward = rlRewardData.total;
 
-    // 7. Update History
-    const lastRecord = history[history.length - 1];
-
-    // Map Weather text to proper case for the component (e.g. sunny -> Sunny)
     const mappedWeatherStr = currentConditions.weather.charAt(0).toUpperCase() + currentConditions.weather.slice(1);
 
     const newRecord = {
@@ -243,190 +262,123 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
       rlDailyRewardPoints: rlRewardData.rewardPoints,
       rlDailyPenaltyPoints: rlRewardData.penaltyPoints,
 
-      // Cumulative Revenue
-      playerRevenue: lastRecord.playerRevenue + playerRevenue,
-      mlRevenue: lastRecord.mlRevenue + mlRevenue,
-      rlRevenue: lastRecord.rlRevenue + rlRevenue,
-      competitorRevenue: (lastRecord.competitorRevenue || 0) + compRevenue,
+      // Cumulative Net Profit
+      playerRevenue: (lastRecord.playerRevenue || 0) + playerDailyProfit,
+      mlRevenue: (lastRecord.mlRevenue || 0) + mlDailyProfit,
+      rlRevenue: (lastRecord.rlRevenue || 0) + rlDailyProfit,
+      competitorRevenue: (lastRecord.competitorRevenue || 0) + compDailyProfit,
 
-      // Cumulative Profit (Required for ProfitChart line)
+      // Cumulative Profit (chart compatibility)
       playerProfit: (lastRecord.playerProfit || 0) + playerDailyProfit,
       mlProfit: (lastRecord.mlProfit || 0) + mlDailyProfit,
       rlProfit: (lastRecord.rlProfit || 0) + rlDailyProfit,
       competitorProfit: (lastRecord.competitorProfit || 0) + compDailyProfit,
 
-      // Daily Revenue (For Tooltip)
-      playerDailyRevenue: playerRevenue,
-      mlDailyRevenue: mlRevenue,
-      rlDailyRevenue: rlRevenue,
-      competitorDailyRevenue: compRevenue,
+      // Daily Gross Revenue
+      playerDailyRevenue: playerBreakdown.gross,
+      mlDailyRevenue: mlBreakdown.gross,
+      rlDailyRevenue: rlBreakdown.gross,
+      competitorDailyRevenue: compBreakdown.gross,
 
-      // Daily Profit (Required for ProfitChart bars/table)
-      playerDailyProfit: playerDailyProfit,
-      mlDailyProfit: mlDailyProfit,
-      rlDailyProfit: rlDailyProfit,
+      // Daily Net Profit
+      playerDailyProfit,
+      mlDailyProfit,
+      rlDailyProfit,
       competitorDailyProfit: compDailyProfit,
 
       // Daily Sales
-      playerSales: playerSales,
-      mlSales: mlSales,
-      rlSales: rlSales,
+      playerSales,
+      mlSales,
+      rlSales,
       competitorSales: compSales,
 
-      // RL Specific Stats for Policy Table
-      startInventory: playerInventory, // Specifically for the ProfitChart Table view
+      // Penalties
+      playerLowSalesPenalty: playerBreakdown.penalty,
+      mlLowSalesPenalty: mlBreakdown.penalty,
+      rlLowSalesPenalty: rlBreakdown.penalty,
+      competitorLowSalesPenalty: compBreakdown.penalty,
+      playerPenalty,
+      mlPenalty,
+      rlPenalty,
+      competitorPenalty,
+
+      // Inventories
+      startInventory: playerInventory,
       mlStartInventory: mlInventory,
       rlStartInventory: rlInventory,
       competitorStartInventory: competitorInventory,
 
-      rlDemand: rlDemand,
-      rlPrice: rlPrice,
-      mlPrice: mlPrice,
-      playerPrice: playerPrice, // Track player action for end game comparison
+      // Price and state trace
+      rlDemand,
+      rlPrice: normalizedRlPrice,
+      mlPrice: normalizedMlPrice,
+      playerPrice: normalizedPlayerPrice,
       weather: mappedWeatherStr,
       nearbyEvent: currentConditions.nearbyEvent,
       competitorPresent: currentConditions.competitorPresent,
-      competitorPrice: currentConditions.competitorPrice,
-      stateId: currentConditions.stateId, // Store the state ID for memory recall
+      competitorPrice: normalizedCompetitorPrice,
+      stateId: currentConditions.stateId,
       dayName: currentConditions.day,
 
-      // Cumulative Sales (For Tooltip)
+      // Cumulative Sales
       playerTotalSales: (lastRecord.playerTotalSales || 0) + playerSales,
       mlTotalSales: (lastRecord.mlTotalSales || 0) + mlSales,
       rlTotalSales: (lastRecord.rlTotalSales || 0) + rlSales,
-      competitorTotalSales: (lastRecord.competitorTotalSales || 0) + compSales,
+      competitorTotalSales: (lastRecord.competitorTotalSales || 0) + compSales
     };
-    setHistory([...history, newRecord]);
 
-    // 8. Advance Day Logic
-    // Update State first
     const updatedHistory = [...history, newRecord];
     setHistory(updatedHistory);
 
-    // AI Emergency Restock (Auto-handled for agents if they run out)
-    let autoMlPenalty = 0;
-    let autoRlPenalty = 0;
-    let actualNextMlInv = nextMlInv;
-    let actualNextRlInv = nextRlInv;
-
-    if (day < 28 && day % 7 !== 0) {
-      if (nextMlInv <= 50) {
-        actualNextMlInv = 200 + nextMlInv;
-        autoMlPenalty = 275; // Bulk discount for 200 cups
-      }
-      if (nextRlInv <= 50) {
-        actualNextRlInv = 200 + nextRlInv;
-        autoRlPenalty = 275;
-      }
-
-      // Apply AI penalties immediately to the new record
-      if (autoMlPenalty > 0 || autoRlPenalty > 0) {
-        const penalizedAIRecord = {
-          ...newRecord,
-          mlRevenue: newRecord.mlRevenue - autoMlPenalty,
-          rlRevenue: newRecord.rlRevenue - autoRlPenalty,
-          mlPenalty: autoMlPenalty,
-          rlPenalty: autoRlPenalty
-        };
-        const historyWithAIPenalty = [...history, penalizedAIRecord];
-        setHistory(historyWithAIPenalty);
-      }
-    }
-
-
-    // Check for Weekly Report (Day 7, 14, 21, 28)
     if (day % 7 === 0) {
-      // 1. Calculate Storage Penalty ($0.50 per unsold cup)
-      const PENALTY_RATE = 0.5;
-      const playerPenalty = nextPlayerInv * PENALTY_RATE;
-      const mlPenalty = nextMlInv * PENALTY_RATE;
-      const rlPenalty = nextRlInv * PENALTY_RATE;
-      const competitorPenalty = nextCompInv * PENALTY_RATE;
-
-      // 2. Apply Penalty to the New Record before calculating Weekly Stats
-      const finalRecord = {
-        ...newRecord,
-        playerRevenue: newRecord.playerRevenue - playerPenalty,
-        mlRevenue: newRecord.mlRevenue - mlPenalty,
-        rlRevenue: newRecord.rlRevenue - rlPenalty,
-        competitorRevenue: (newRecord.competitorRevenue || 0) - competitorPenalty,
-
-        // Store penalties for modal viewing
-        playerPenalty,
-        mlPenalty,
-        rlPenalty,
-        competitorPenalty,
+      const weekSlice = updatedHistory.slice(-7);
+      const startOfWeek = updatedHistory[updatedHistory.length - 8] || {
+        playerProfit: 0,
+        mlProfit: 0,
+        rlProfit: 0,
+        competitorProfit: 0
       };
-
-      // Replace the last record in history with the penalized one
-      const penalizedHistory = [...history, finalRecord];
-      setHistory(penalizedHistory);
-
-      const weekStartIndex = penalizedHistory.length - 7;
-      const weekSlice = penalizedHistory.slice(weekStartIndex);
-
-      const startOfWeek = penalizedHistory[penalizedHistory.length - 8] || {
-        playerRevenue: 0,
-        mlRevenue: 0,
-        rlRevenue: 0,
-      };
-      const endOfWeek = finalRecord;
 
       const weeklyStats = {
-        playerTotal: endOfWeek.playerRevenue - startOfWeek.playerRevenue,
-        mlTotal: endOfWeek.mlRevenue - startOfWeek.mlRevenue,
-        rlTotal: endOfWeek.rlRevenue - startOfWeek.rlRevenue,
-        competitorTotal:
-          (endOfWeek.competitorRevenue || 0) -
-          (startOfWeek.competitorRevenue || 0),
-
-        // Pass the penalties to the modal
+        playerTotal: (newRecord.playerProfit || 0) - (startOfWeek.playerProfit || 0),
+        mlTotal: (newRecord.mlProfit || 0) - (startOfWeek.mlProfit || 0),
+        rlTotal: (newRecord.rlProfit || 0) - (startOfWeek.rlProfit || 0),
+        competitorTotal: (newRecord.competitorProfit || 0) - (startOfWeek.competitorProfit || 0),
         playerPenalty,
         mlPenalty,
         rlPenalty,
         competitorPenalty,
-
         playerInventoryLeft: nextPlayerInv,
         mlInventoryLeft: nextMlInv,
         rlInventoryLeft: nextRlInv,
         competitorInventoryLeft: nextCompInv,
-
-        playerSales: weekSlice.reduce(
-          (sum, d) => sum + (d.playerSales || 0),
-          0,
-        ),
+        playerSales: weekSlice.reduce((sum, d) => sum + (d.playerSales || 0), 0),
         mlSales: weekSlice.reduce((sum, d) => sum + (d.mlSales || 0), 0),
         rlSales: weekSlice.reduce((sum, d) => sum + (d.rlSales || 0), 0),
-        competitorSales: weekSlice.reduce(
-          (sum, d) => sum + (d.competitorSales || 0),
-          0,
-        ),
+        competitorSales: weekSlice.reduce((sum, d) => sum + (d.competitorSales || 0), 0)
       };
 
       setPendingWeeklyStats(weeklyStats);
+    } else {
+      setPendingWeeklyStats(null);
     }
 
-    // Prepare state for Next Day (handleContinue will process this)
     setPendingNextDayStr({
       nextDayNum: day + 1,
       pInv: nextPlayerInv,
-      mInv: actualNextMlInv,
-      rInv: actualNextRlInv,
+      mInv: nextMlInv,
+      rInv: nextRlInv,
       cInv: nextCompInv
     });
 
-    // Setup Feedback for Popup
-    const dailyProfit = playerRevenue - (playerSales * 1.00);
-    const fColor = 'blue';
-    const fIcon = <Info />;
-    const fTitle = "Daily Results";
-
     setFeedback({
-      color: fColor,
-      icon: fIcon,
-      title: fTitle,
-      value: dailyProfit,
-      playerSales: playerSales
+      color: 'blue',
+      icon: <Info />,
+      title: 'Daily Results',
+      value: playerDailyProfit,
+      playerSales,
+      playerReward: playerDailyReward,
+      showZeroMarginInsight: normalizedPlayerPrice === 1
     });
 
     setShowPopup(true);
@@ -447,27 +399,31 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
       return;
     }
 
-    // Emergency Restock Trap
-    if (pendingNextDayStr.pInv <= 50) {
-      setShowRestockModal(true);
-      return; // handleEmergencyRestock will take over
+    if (!pendingNextDayStr) {
+      advanceDay(day + 1);
+      return;
     }
 
-    // Standard Advance
     advanceDay(pendingNextDayStr.nextDayNum, pendingNextDayStr.pInv, pendingNextDayStr.mInv, pendingNextDayStr.rInv, pendingNextDayStr.cInv);
   };
 
-  const advanceDay = (nextDayNum, pInv = 1500, mInv = 1500, rInv = 1500, cInv = 1500) => {
+  const advanceDay = (
+    nextDayNum,
+    pInv = WEEKLY_START_INVENTORY,
+    mInv = WEEKLY_START_INVENTORY,
+    rInv = WEEKLY_START_INVENTORY,
+    cInv = WEEKLY_START_INVENTORY
+  ) => {
     setDay(nextDayNum);
     const nextConditions = generateMainGameConditions(nextDayNum);
     setConditions(nextConditions);
 
     // Weekly Refill logic
     if (nextDayNum % 7 === 1) {
-      setPlayerInventory(1500);
-      setMlInventory(1500);
-      setRlInventory(1500);
-      setCompetitorInventory(1500);
+      setPlayerInventory(WEEKLY_START_INVENTORY);
+      setMlInventory(WEEKLY_START_INVENTORY);
+      setRlInventory(WEEKLY_START_INVENTORY);
+      setCompetitorInventory(WEEKLY_START_INVENTORY);
     } else {
       setPlayerInventory(pInv);
       setMlInventory(mInv);
@@ -480,15 +436,8 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
     // Close modal and start next day
     setWeeklyModalOpen(false);
 
-    // Check if player had 0 inventory and needs emergency restock right after weekly report
-    // Fix: Skip if next day is a refill day (Monday) or if it's the end of the game (Day 28)
-    if (pendingNextDayStr && pendingNextDayStr.pInv <= 0 && pendingNextDayStr.nextDayNum % 7 !== 1 && day < 28) {
-      setShowRestockModal(true);
-      return;
-    }
-
     if (pendingNextDayStr) {
-      let nextDayNum = pendingNextDayStr.nextDayNum;
+      const nextDayNum = pendingNextDayStr.nextDayNum;
 
       // End game after week 4 report
       if (day === 28) {
@@ -506,21 +455,9 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
     }
   };
 
-  const handleEmergencyRestock = (amount, cost) => {
+  const handleEmergencyRestock = () => {
+    // Emergency restock is removed in the new mechanics.
     setShowRestockModal(false);
-
-    // Apply cost to player revenue in history
-    const lastHistoryIndex = history.length - 1;
-    const currentHist = [...history];
-    const latestRecord = { ...currentHist[lastHistoryIndex] };
-    latestRecord.playerRevenue -= cost;
-    latestRecord.playerPenalty = (latestRecord.playerPenalty || 0) + cost; // Add to tooltips!
-    currentHist[lastHistoryIndex] = latestRecord;
-    setHistory(currentHist);
-
-    // Proceed to next day with new inventory
-    advanceDay(pendingNextDayStr.nextDayNum, amount, pendingNextDayStr.mInv, pendingNextDayStr.rInv, pendingNextDayStr.cInv);
-    setPendingNextDayStr(null);
   };
 
   const handleBackToWeekly = () => {
@@ -536,12 +473,23 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
     }
   };
 
+  if (showPolicyQuizPage) {
+    return (
+      <PolicyQuizPage
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onBackToPolicyReview={() => setShowPolicyQuizPage(false)}
+      />
+    );
+  }
+
   if (showPolicyPage) {
     return (
       <PolicyReviewPage
         history={history}
         shopName={shopName}
         onBackToDebrief={() => setShowPolicyPage(false)}
+        onGoToQuiz={() => setShowPolicyQuizPage(true)}
         theme={theme}
         toggleTheme={toggleTheme}
         onRestart={handleRestart}
@@ -629,7 +577,7 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
             <div className="w-full flex-grow min-h-0 flex flex-col md:flex-row gap-4 lg:gap-6">
               <div className="md:w-1/2 bg-coffee-800/50 rounded-2xl border border-coffee-700/50 h-full flex flex-col overflow-hidden">
                 <div className="flex-grow w-full">
-                  <ProfitChart data={history} showRLAgents={true} shopName={shopName} hideRLLine={true} hideMLReward={true} />
+                  <ProfitChart data={history} showRLAgents={true} shopName={shopName} hideRLLine={true} hideMLReward={true} hideRLRewardLine={true} />
                 </div>
               </div>
 
@@ -648,13 +596,16 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
             <div className="flex flex-col lg:flex-row gap-4 shrink-0 lg:h-[190px]">
               {/* Left: Price Selection & Settings */}
               <div className="lg:w-[38%] flex flex-col">
-                <div className="bg-coffee-700/60 p-4 rounded-xl border border-coffee-700 shadow-xl relative overflow-hidden flex flex-col h-full gap-3">
+                <div className={`${theme === 'theme-latte'
+                  ? 'bg-gradient-to-br from-amber-100/85 via-amber-50/80 to-orange-100/75 border-amber-500/70 ring-amber-500/35 shadow-amber-500/20'
+                  : 'bg-gradient-to-br from-amber-700/35 via-coffee-700/85 to-coffee-800/85 border-amber-400/55 ring-amber-300/35 shadow-amber-900/20'
+                  } p-4 rounded-xl border ring-1 shadow-xl relative overflow-hidden flex flex-col h-full gap-3`}>
                   {/* Decor */}
-                  <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+                  <div className={`absolute -right-4 -top-4 w-20 h-20 rounded-full blur-2xl pointer-events-none ${theme === 'theme-latte' ? 'bg-amber-300/45' : 'bg-amber-400/30'}`} />
 
                   {/* TOP: Labels, Slider, Input Side-by-Side */}
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-coffee-300 font-bold uppercase tracking-wider shrink-0">Set Price for the day:</span>
+                    <span className="text-sm text-amber-50 font-extrabold uppercase tracking-wider shrink-0 bg-amber-200/10 border border-amber-300/30 px-2 py-0.5 rounded-md shadow-[0_1px_2px_rgba(0,0,0,0.35)]">Set Price for the day:</span>
                     <input
                       type="range"
                       min="1"
@@ -662,10 +613,10 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
                       step="0.5"
                       value={playerPrice}
                       onChange={(e) => setPlayerPrice(parseFloat(e.target.value))}
-                      className="flex-grow h-2 bg-coffee-950 rounded-lg appearance-none cursor-pointer accent-amber-500 shadow-inner"
+                      className="flex-grow h-2 bg-coffee-950/80 rounded-lg appearance-none cursor-pointer accent-amber-400 shadow-inner"
                     />
                     <div className="flex items-center gap-1 shrink-0">
-                      <span className="text-lg text-amber-400 font-black">$</span>
+                      <span className="text-lg text-amber-300 font-black">$</span>
                       <input
                         type="number"
                         min="1"
@@ -681,7 +632,7 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
                           if (val > 10) val = 10;
                           setPlayerPrice(val);
                         }}
-                        className="w-16 bg-coffee-900 border border-coffee-700 text-amber-400 text-base font-black rounded-lg px-2 py-0.5 focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
+                        className="w-16 bg-coffee-900/80 border border-amber-600/40 text-amber-200 text-base font-black rounded-lg px-2 py-0.5 focus:outline-none focus:border-amber-400 transition-colors shadow-inner"
                       />
                     </div>
                   </div>
@@ -768,7 +719,7 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
                               'bg-blue-900/20 border-l-4 border-blue-500'
                             }`}
                         >
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
                               <div className={`p-2 rounded-xl ${feedback.color === 'emerald' ? 'bg-emerald-900/50 text-emerald-400' :
                                 feedback.color === 'red' ? 'bg-red-900/50 text-red-400' :
@@ -781,17 +732,26 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
                                   feedback.color === 'red' ? 'text-red-400' :
                                     'text-blue-400'
                                   }`}>{feedback.title}</h2>
-                                <div className="text-xl font-black text-coffee-100 tracking-tight">
-                                  ${feedback.value.toFixed(2)} <span className="text-[8px] font-bold text-coffee-400 uppercase tracking-widest">PROFIT</span>
+                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                  <div className="text-xl font-black text-coffee-100 tracking-tight">
+                                    ${feedback.value.toFixed(2)} <span className="text-[8px] font-bold text-coffee-400 uppercase tracking-widest">PROFIT</span>
+                                  </div>
+                                  <div className="flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 border bg-amber-100/95 border-amber-300 text-amber-900 shadow-md dark:bg-amber-500/25 dark:border-amber-400/40 dark:text-amber-100">
+                                    <div className="flex items-center gap-1">
+                                      <Coffee className="w-3 h-3" />
+                                      <span className="text-sm font-black leading-none">{feedback.playerSales}</span>
+                                    </div>
+                                    <span className="text-[7px] uppercase tracking-widest mt-1 leading-none opacity-85">Sold</span>
+                                  </div>
+                                  <div className="flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 border bg-violet-100/95 border-violet-300 text-violet-900 shadow-md dark:bg-violet-500/25 dark:border-violet-400/40 dark:text-violet-100">
+                                    <div className="flex items-center gap-1">
+                                      <DollarSign className="w-3 h-3" />
+                                      <span className="text-sm font-black leading-none">{(feedback.playerReward ?? 0).toFixed(1)}</span>
+                                    </div>
+                                    <span className="text-[7px] uppercase tracking-widest mt-1 leading-none opacity-85">Reward</span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex flex-col items-center justify-center bg-coffee-950/80 border border-coffee-700/50 rounded-lg px-2 py-1 shadow-inner">
-                              <div className="flex items-center gap-1">
-                                <Coffee className="w-3 h-3 text-amber-500" />
-                                <span className="text-sm font-black text-coffee-100 leading-none">{feedback.playerSales}</span>
-                              </div>
-                              <span className="text-[7px] text-coffee-400 uppercase tracking-widest mt-1 leading-none">Sold</span>
                             </div>
                           </div>
                           <div className="flex justify-end mt-auto">
@@ -808,6 +768,13 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, userAvat
                               <ArrowRight className="w-3 h-3" />
                             </motion.button>
                           </div>
+                          {feedback.showZeroMarginInsight && (
+                            <div className="mt-3 bg-red-900/30 border border-red-500/40 rounded-lg p-2.5">
+                              <p className="text-[10px] text-red-100 leading-snug">
+                                Since cost of inventory for one cup of coffee is one dollar and you set your selling price as one dollar, you make 0.0 profit.
+                              </p>
+                            </div>
+                          )}
                         </motion.div>
                       ) : (
                         <motion.div

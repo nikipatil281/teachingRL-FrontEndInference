@@ -6,7 +6,7 @@ import {
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-coffee-800 p-3 border border-coffee-700 rounded-lg shadow-xl text-sm z-50">
+      <div className="bg-coffee-800 p-3 border border-coffee-700 rounded-lg shadow-xl text-sm z-50 min-w-[220px]">
         <p className="text-coffee-200 font-bold mb-2">{label}</p>
         {payload.map((entry, index) => {
           // Standard tooltip logic for You, ML Agent, RL Agent, and Competitor
@@ -42,7 +42,7 @@ const CustomTooltip = ({ active, payload, label }) => {
                   <span className="text-coffee-200">${dailyRev.toFixed(0)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Daily Sold:</span>
+                  <span>sold on this day:</span>
                   <span className="text-coffee-200">{dailySales}</span>
                 </div>
 

@@ -35,10 +35,10 @@ const TransitionPhase = ({ onComplete, theme }) => {
         </motion.div>
 
         <h1 className="text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
-          Time for the main game!
+          Time for the main Simulation!
         </h1>
         <p className="text-coffee-300 text-lg md:text-xl font-medium">
-          Get ready to work alongside the RL algorithm...
+          Get ready to work alongside the Reinforcement Learning algorithm...
         </p>
       </motion.div>
 

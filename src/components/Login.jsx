@@ -54,7 +54,7 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
                 ROAST & REWARD
               </span>
             </div>
-            <span className="text-xl md:text-2xl font-bold text-coffee-100/90 mt-1">COFFEE SHOP RL SIMULATION</span>
+            <span className="text-xl md:text-2xl font-bold text-coffee-100/90 mt-1">COFFEE SHOP REINFORCEMENT LEARNING SIMULATION</span>
           </motion.h1>
         </div>
 
@@ -128,9 +128,7 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
               transition={{ delay: 0.2 }}
               className="bg-coffee-800/40 p-3 rounded-3xl border border-coffee-700/50 backdrop-blur-md h-full flex flex-col overflow-hidden"
             >
-              <h2 className="text-lg font-bold border-b border-coffee-700/50 pb-2 mb-3 flex items-center gap-2 text-amber-400">
-                <MapPin className="w-5 h-5" /> Market View
-              </h2>
+
               <div className="relative flex-grow rounded-2xl overflow-hidden border border-coffee-700/50 shadow-2xl aspect-[1/1] lg:aspect-auto bg-coffee-900 flex items-center justify-center">
                 <img
                   src="/cafe_interior.png"
