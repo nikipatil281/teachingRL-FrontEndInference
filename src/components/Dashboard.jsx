@@ -47,6 +47,47 @@ const createInitialPolicyQuizState = () => ({
   nextScenarioId: 2,
 });
 
+const SessionLeaveConfirmModal = ({ isOpen, actionLabel, onCancel, onConfirm }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.96 }}
+        className="w-full max-w-md rounded-2xl border border-coffee-700 bg-coffee-900 p-5 shadow-2xl"
+      >
+        <div className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-400">
+          Leave Session?
+        </div>
+        <h3 className="mt-2 text-xl font-bold text-coffee-100">
+          Your current gameplay session will be lost.
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed text-coffee-300">
+          If you leave this page now, the progress from the present run will not be saved. Are you sure you want to continue?
+        </p>
+        <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-xl border border-coffee-700 bg-coffee-800 px-4 py-2.5 text-sm font-bold text-coffee-100 transition-colors hover:bg-coffee-700"
+          >
+            No, go back
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-500"
+          >
+            Yes, {actionLabel}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const Dashboard = ({
   theme,
   toggleTheme,
@@ -120,6 +161,7 @@ const Dashboard = ({
   const [showPolicyPage, setShowPolicyPage] = useState(false);
   const [showPolicyQuizPage, setShowPolicyQuizPage] = useState(false);
   const [policyQuizState, setPolicyQuizState] = useState(createInitialPolicyQuizState);
+  const [pendingLeaveAction, setPendingLeaveAction] = useState(null);
   const mutedPanelClass = showPopup
     ? "opacity-55 grayscale brightness-75"
     : "opacity-100 grayscale-0 brightness-100";
@@ -158,7 +200,7 @@ const Dashboard = ({
       return {
         dayNum: lastOccurrence.day.replace("Day ", ""),
         price: lastOccurrence.playerPrice,
-        profit: lastOccurrence.playerDailyProfit,
+        profit: lastOccurrence.playerDailyGrossProfit ?? Math.max(lastOccurrence.playerDailyProfit ?? 0, 0),
         reward: lastOccurrence.playerDailyReward,
         dayName: lastOccurrence.dayName || conditions.day // Fallback
       };
@@ -550,11 +592,27 @@ const Dashboard = ({
   };
 
   const handleRestart = () => {
-    if (onRestart) {
-      onRestart();
-    } else {
-      window.location.reload();
+    setPendingLeaveAction("restart");
+  };
+
+  const handleExitSession = () => {
+    setPendingLeaveAction("exit");
+  };
+
+  const handleConfirmLeave = () => {
+    if (pendingLeaveAction === "restart") {
+      if (onRestart) {
+        onRestart();
+      } else {
+        window.location.reload();
+      }
     }
+
+    if (pendingLeaveAction === "exit") {
+      onExitToLogin?.();
+    }
+
+    setPendingLeaveAction(null);
   };
 
   if (showPolicyQuizPage) {
@@ -564,7 +622,7 @@ const Dashboard = ({
         toggleTheme={toggleTheme}
         onBackToPolicyReview={() => setShowPolicyQuizPage(false)}
         onRestart={handleRestart}
-        onExitToLogin={onExitToLogin}
+        onExitToLogin={handleExitSession}
         quizState={policyQuizState}
         setQuizState={setPolicyQuizState}
       />
@@ -581,7 +639,7 @@ const Dashboard = ({
         theme={theme}
         toggleTheme={toggleTheme}
         onRestart={handleRestart}
-        onExitToLogin={onExitToLogin}
+        onExitToLogin={handleExitSession}
       />
     );
   }
@@ -745,7 +803,7 @@ const Dashboard = ({
                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-blue-900/20 border border-blue-500/30 p-2 rounded-lg text-[10px] lg:text-[11px] text-blue-200 leading-snug w-full text-left">
                         <div className="font-bold text-blue-800 dark:text-blue-400 mb-0.5 flex items-center gap-1"><Info className="w-3 h-3" /> If you wanna try exploiting...</div>
                         <span className="text-blue-900 dark:text-blue-200">
-                          On a previous {memoryData.dayName}, a similar state gave a profit of <span className="font-bold text-blue-900 dark:text-white">${memoryData.profit?.toFixed(0)}</span> and reward of <span className="font-bold text-blue-900 dark:text-white">{memoryData.reward?.toFixed(0)} Pts</span> at the price per cup of <span className="font-bold text-blue-900 dark:text-white">${memoryData.price.toFixed(2)}</span>
+                          On a previous {memoryData.dayName}, a similar state gave a profit of <span className="font-bold text-blue-900 dark:text-white">${memoryData.profit?.toFixed(0)}</span> and net reward of <span className="font-bold text-blue-900 dark:text-white">{memoryData.reward?.toFixed(0)} Pts</span> at the price per cup of <span className="font-bold text-blue-900 dark:text-white">${memoryData.price.toFixed(2)}</span>.
                         </span>
                       </motion.div>
                     )}
@@ -986,6 +1044,15 @@ const Dashboard = ({
         onRestock={handleEmergencyRestock}
         theme={theme}
       />
+
+      <AnimatePresence>
+        <SessionLeaveConfirmModal
+          isOpen={pendingLeaveAction !== null}
+          actionLabel={pendingLeaveAction === "restart" ? "run it again" : "leave"}
+          onCancel={() => setPendingLeaveAction(null)}
+          onConfirm={handleConfirmLeave}
+        />
+      </AnimatePresence>
 
       <AnimatePresence>
         {toast && (

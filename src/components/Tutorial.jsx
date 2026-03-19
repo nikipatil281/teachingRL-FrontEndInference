@@ -101,9 +101,9 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
       }
 
       return {
-        dayStr: maxProfitDay.day,
+        dayStr: maxProfitDay.dayName || maxProfitDay.day,
         price: maxProfitDay.playerPrice,
-        profit: maxProfitDay.playerDailyProfit,
+        profit: maxProfitDay.playerDailyGrossProfit ?? Math.max(maxProfitDay.playerDailyProfit ?? 0, 0),
         reward: maxProfitDay.playerDailyReward || 0
       };
     }
@@ -549,7 +549,7 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
                       <div className="bg-blue-900/20 border border-blue-500/30 p-2 rounded-lg text-[10px] lg:text-[11px] text-blue-200 leading-snug w-full">
                         <div className="font-bold text-blue-800 dark:text-blue-400 mb-0.5 flex items-center gap-1"><Info className="w-3 h-3" /> If you wanna try exploiting...</div>
                         <span className="text-blue-900 dark:text-blue-200">
-                          On a previous {memoryData.dayStr}, a similar state gave a profit of <span className="font-bold text-blue-900 dark:text-white">${memoryData.profit?.toFixed(0)}</span> and reward of <span className="font-bold text-blue-900 dark:text-white">{memoryData.reward?.toFixed(0)} Pts</span> at the price per cup of <span className="font-bold text-blue-900 dark:text-white">${memoryData.price.toFixed(2)}</span>
+                          On a previous {memoryData.dayStr}, a similar state gave a profit of <span className="font-bold text-blue-900 dark:text-white">${memoryData.profit?.toFixed(0)}</span> and net reward of <span className="font-bold text-blue-900 dark:text-white">{memoryData.reward?.toFixed(0)} Pts</span> at the price per cup of <span className="font-bold text-blue-900 dark:text-white">${memoryData.price.toFixed(2)}</span>.
                         </span>
                       </div>
                     )}
