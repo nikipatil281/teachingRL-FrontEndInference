@@ -1,8 +1,13 @@
-// MLAgent.js - Uses local ML prediction backend
+// MLAgent.js - Uses deployable ML prediction backend
+
+const ML_API_BASE_URL = (
+    import.meta.env.VITE_ML_API_URL
+    || "http://127.0.0.1:5002"
+).replace(/\/$/, "");
 
 export const initMLModel = async () => {
     try {
-        const response = await fetch("http://127.0.0.1:5002/health");
+        const response = await fetch(`${ML_API_BASE_URL}/health`);
         const data = await response.json();
         console.log("ML Backend Health:", data);
         return data.model_loaded;
@@ -29,7 +34,7 @@ export const getMLPrice = async (dayOfWeek, weather, nearbyEvent, inventory, com
     };
 
     try {
-        const response = await fetch("http://127.0.0.1:5002/predict", {
+        const response = await fetch(`${ML_API_BASE_URL}/predict`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

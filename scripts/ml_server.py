@@ -94,5 +94,7 @@ def health():
 
 if __name__ == '__main__':
     load_model()
-    print("Starting ML Predictor Server on port 5002...")
-    app.run(host='127.0.0.1', port=5002)
+    port = int(os.environ.get('PORT', 5002))
+    host = os.environ.get('HOST', '0.0.0.0')
+    print(f"Starting ML Predictor Server on {host}:{port}...")
+    app.run(host=host, port=port)

@@ -83,3 +83,13 @@ npm run dev
 ## 6) Stop servers
 
 Press `Ctrl + C` in each server terminal.
+
+## 7) Temporary cloud deployment notes
+
+- ML service build command: `pip install -r requirements-ml.txt`
+- ML service start command: `python scripts/ml_server.py`
+- RL service build command: `pip install -r requirements-rl.txt`
+- RL service start command: `python scripts/rl_server.py`
+- Frontend env vars:
+  - `VITE_ML_API_URL`
+  - `VITE_RL_API_URL`

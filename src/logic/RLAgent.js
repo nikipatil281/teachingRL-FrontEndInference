@@ -1,6 +1,9 @@
 class RLAgent {
   constructor() {
-    this.endpoint = "http://127.0.0.1:5001/predict";
+    this.endpoint = (
+      import.meta.env.VITE_RL_API_URL
+      || "http://127.0.0.1:5001"
+    ).replace(/\/$/, "") + "/predict";
     this.weatherMap = { "Sunny": 0, "Cloudy": 1, "Rainy": 2 };
     this.dayMap = {
       "Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3,
