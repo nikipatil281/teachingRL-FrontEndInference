@@ -47,8 +47,8 @@ const createInitialPolicyQuizState = () => ({
   nextScenarioId: 2,
 });
 
-const COMPACT_DASHBOARD_WIDTH = 1280;
-const COMPACT_DASHBOARD_HEIGHT = 900;
+const COMPACT_DASHBOARD_WIDTH = 1180;
+const COMPACT_DASHBOARD_HEIGHT = 820;
 
 const SessionLeaveConfirmModal = ({ isOpen, actionLabel, onCancel, onConfirm }) => {
   if (!isOpen) return null;
@@ -982,14 +982,14 @@ const Dashboard = ({
         </div>
 
         {/* Right Sidebar: Timeline (Desktop Only) specifically for 28 Days */}
-        <div className="hidden lg:flex flex-col items-center w-[60px] shrink-0 h-full">
-          <div className="flex flex-col items-center w-full bg-coffee-800/30 py-4 px-2 rounded-2xl border border-coffee-700/50 relative overflow-hidden h-full">
+        <div className="hidden lg:flex flex-col items-center w-[60px] shrink-0 min-h-0 self-stretch">
+          <div className="flex flex-col items-center w-full bg-coffee-800/30 py-4 px-2 rounded-2xl border border-coffee-700/50 relative overflow-hidden h-full min-h-0">
 
             <div className="text-[10px] font-bold text-coffee-400 relative z-10 tracking-widest uppercase mb-4 text-center leading-tight">
               Day<br /><span className="text-blue-400 text-sm">{day}</span>
             </div>
 
-            <div className="relative w-full flex-grow flex flex-col items-center mb-2 overflow-y-auto no-scrollbar scroll-smooth">
+            <div className="relative w-full flex-1 min-h-0 flex flex-col items-center mb-2 overflow-y-auto no-scrollbar scroll-smooth">
               {/* Timeline continuous axis */}
               <div className="absolute top-2 bottom-2 left-1/2 -translate-x-1/2 w-0.5 bg-coffee-700/40 z-0 h-full" />
 
