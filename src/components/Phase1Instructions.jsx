@@ -36,7 +36,7 @@ const Phase1Instructions = ({ onComplete, theme, toggleTheme }) => {
   }, []);
 
   return (
-    <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-x-hidden overflow-y-auto transition-colors duration-500 ${theme}`}>
+    <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center p-4 md:p-8 relative overflow-x-hidden overflow-y-auto transition-colors duration-500 ${theme}`}>
       <style>
         {`
           .tour-image-loader {
@@ -158,7 +158,7 @@ const Phase1Instructions = ({ onComplete, theme, toggleTheme }) => {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="z-10 w-full max-w-7xl bg-coffee-950/50 backdrop-blur-xl border border-coffee-800 rounded-3xl p-5 md:p-8 shadow-2xl flex flex-col items-center text-center relative"
+        className="z-10 my-auto w-full max-w-7xl bg-coffee-950/50 backdrop-blur-xl border border-coffee-800 rounded-3xl p-5 md:p-8 shadow-2xl flex flex-col items-center text-center relative"
       >
         {/* Annotated Tutorial Dashboard Screenshot */}
         <motion.div

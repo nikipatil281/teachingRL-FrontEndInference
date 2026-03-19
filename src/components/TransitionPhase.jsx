@@ -21,7 +21,7 @@ const TransitionPhase = ({ onComplete, theme }) => {
   }, []);
 
   return (
-    <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center justify-center relative overflow-y-auto transition-colors duration-500 ${theme}`}>
+    <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center relative overflow-y-auto transition-colors duration-500 ${theme}`}>
       <style>
         {`
           .transition-loader {
@@ -155,7 +155,7 @@ const TransitionPhase = ({ onComplete, theme }) => {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 1.1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="z-10 flex flex-col items-center text-center px-4 pt-12 md:pt-16"
+        className="z-10 my-auto flex flex-col items-center text-center px-4 pt-12 md:pt-16"
       >
         <h1 className="text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
           Time for the main Simulation!

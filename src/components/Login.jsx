@@ -18,7 +18,7 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
   };
 
   return (
-    <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center p-4 md:p-8 relative overflow-x-hidden overflow-y-auto transition-colors duration-500 ${theme}`}>
+    <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center p-4 md:p-8 relative overflow-hidden transition-colors duration-500 ${theme}`}>
 
       {/* Theme Toggle Button */}
       <div className="absolute top-4 right-4 md:top-8 md:right-8 z-20">
@@ -31,15 +31,15 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
       </div>
 
       {/* Doodle Pattern Overlay */}
-      <div className={`absolute inset-0 pointer-events-none bg-doodle-mask z-0 transition-all duration-500 ${theme === 'theme-black-coffee' ? 'bg-amber-100 opacity-[0.07] mix-blend-screen' : 'bg-amber-900 opacity-[0.1] mix-blend-luminosity'}`} />
+      <div className={`fixed inset-0 pointer-events-none bg-doodle-mask z-0 transition-all duration-500 ${theme === 'theme-black-coffee' ? 'bg-amber-100 opacity-[0.07] mix-blend-screen' : 'bg-amber-900 opacity-[0.1] mix-blend-luminosity'}`} />
 
       {/* Background Decor */}
-      <div className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${theme === 'theme-black-coffee' ? 'opacity-40 mix-blend-screen' : 'opacity-60 mix-blend-color-burn'}`}>
+      <div className={`fixed inset-0 pointer-events-none transition-opacity duration-500 ${theme === 'theme-black-coffee' ? 'opacity-40 mix-blend-screen' : 'opacity-60 mix-blend-color-burn'}`}>
         <div className="absolute top-[-5%] left-[-5%] w-[600px] h-[600px] bg-amber-900/30 rounded-full blur-[120px] animate-blob" />
         <div className="absolute bottom-[-5%] right-[-5%] w-[500px] h-[500px] bg-orange-900/20 rounded-full blur-[120px] animate-blob [animation-delay:2s]" />
       </div>
 
-      <div className="z-10 w-full max-w-7xl flex flex-col items-center justify-center flex-grow py-12 gap-8 md:gap-12">
+      <div className="z-10 w-full max-w-6xl flex flex-1 min-h-0 flex-col items-center justify-center py-6 md:py-8 gap-5 md:gap-8">
 
         {/* Title Section */}
         <div className="text-center">
@@ -49,16 +49,16 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
             className="font-black flex flex-col items-center justify-center tracking-tighter"
           >
             <div className="flex items-center gap-3">
-              <Coffee className="w-10 h-10 md:w-14 md:h-14 text-amber-500" />
-              <span className="text-4xl md:text-6xl bg-gradient-to-b from-amber-400 to-orange-600 bg-clip-text text-transparent">
+              <Coffee className="w-9 h-9 md:w-12 md:h-12 text-amber-500" />
+              <span className="text-3xl md:text-5xl bg-gradient-to-b from-amber-400 to-orange-600 bg-clip-text text-transparent">
                 ROAST & REWARD
               </span>
             </div>
-            <span className="text-xl md:text-2xl font-bold text-coffee-100/90 mt-1">COFFEE SHOP REINFORCEMENT LEARNING SIMULATION</span>
+            <span className="text-lg md:text-xl font-bold text-coffee-100/90 mt-1">COFFEE SHOP REINFORCEMENT LEARNING SIMULATION</span>
           </motion.h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 w-full max-w-5xl items-stretch mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 w-full max-w-[68rem] items-stretch mx-auto min-h-0">
 
           {/* Left Column: Join Session */}
           <div className="flex flex-col justify-center">
@@ -66,16 +66,16 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", damping: 20 }}
-              className="bg-coffee-800 p-6 md:p-8 rounded-[2rem] border-2 border-amber-600/30 w-full shadow-2xl relative overflow-hidden flex flex-col items-center"
+              className="bg-coffee-800 p-5 md:p-6 rounded-[1.75rem] border-2 border-amber-600/30 w-full shadow-2xl relative overflow-hidden flex flex-col items-center"
             >
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-amber-500/5 to-transparent pointer-events-none" />
 
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-coffee-900 rounded-3xl flex items-center justify-center mb-4 md:mb-6 border border-coffee-700 shadow-inner">
-                <Target className="w-8 h-8 md:w-10 md:h-10 text-amber-500" />
+              <div className="w-14 h-14 md:w-16 md:h-16 bg-coffee-900 rounded-3xl flex items-center justify-center mb-4 md:mb-5 border border-coffee-700 shadow-inner">
+                <Target className="w-7 h-7 md:w-8 md:h-8 text-amber-500" />
               </div>
 
-              <h2 className="text-2xl md:text-3xl font-black mb-1 md:mb-2 text-coffee-100">Join Session</h2>
-              <p className="text-coffee-400 text-xs md:text-sm mb-6 md:mb-8 text-center leading-tight">Enter details to start simulation.</p>
+              <h2 className="text-2xl md:text-3xl font-black mb-1 text-coffee-100">Join Session</h2>
+              <p className="text-coffee-400 text-xs md:text-sm mb-5 md:mb-6 text-center leading-tight">Enter details to start simulation.</p>
 
               <form onSubmit={handleJoin} className="w-full space-y-3 relative z-10">
                 <div className="relative">
@@ -88,7 +88,7 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
                     onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                     placeholder="SESS-0000"
                     maxLength={10}
-                    className="w-full bg-coffee-950 border-2 border-coffee-700 rounded-2xl py-3 px-6 text-center text-xl font-black tracking-widest text-coffee-100 focus:outline-none focus:border-amber-500 uppercase placeholder:text-coffee-900 transition-all shadow-inner mb-3"
+                    className="w-full bg-coffee-950 border-2 border-coffee-700 rounded-2xl py-2.5 md:py-3 px-6 text-center text-xl font-black tracking-widest text-coffee-100 focus:outline-none focus:border-amber-500 uppercase placeholder:text-coffee-900 transition-all shadow-inner mb-3"
                   />
 
                   <div className="w-full text-left ml-2 mb-1">
@@ -100,7 +100,7 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
                     onChange={(e) => setUserNameInput(e.target.value)}
                     placeholder="Enter Your Name"
                     maxLength={30}
-                    className="w-full bg-coffee-950 border-2 border-coffee-700 rounded-2xl py-3 px-6 text-center text-lg font-bold tracking-wide text-coffee-100 focus:outline-none focus:border-amber-500 placeholder:text-coffee-900 transition-all shadow-inner mb-3"
+                    className="w-full bg-coffee-950 border-2 border-coffee-700 rounded-2xl py-2.5 md:py-3 px-6 text-center text-lg font-bold tracking-wide text-coffee-100 focus:outline-none focus:border-amber-500 placeholder:text-coffee-900 transition-all shadow-inner mb-3"
                   />
 
                   {error && <p className="text-red-400 text-[10px] text-center mt-2 font-semibold absolute -bottom-6 left-0 right-0">{error}</p>}
@@ -111,7 +111,7 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="submit"
-                    className={`w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 ${theme === 'theme-black-coffee' ? 'text-coffee-950' : 'text-coffee-100'} font-black text-lg py-4 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-amber-500/20 transition-all group`}
+                    className={`w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 ${theme === 'theme-black-coffee' ? 'text-coffee-950' : 'text-coffee-100'} font-black text-lg py-3.5 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-amber-500/20 transition-all group`}
                   >
                     Enter the session <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </motion.button>
@@ -121,15 +121,15 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
           </div>
 
           {/* Right Column: Visual Layout */}
-          <div className="flex flex-col gap-4">
+          <div className="flex min-h-0 flex-col gap-4">
             <motion.div
               initial={{ x: 30, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="bg-coffee-800/40 p-3 rounded-3xl border border-coffee-700/50 backdrop-blur-md h-full flex flex-col overflow-hidden"
+              className="bg-coffee-800/40 p-2.5 md:p-3 rounded-3xl border border-coffee-700/50 backdrop-blur-md h-full min-h-0 flex flex-col overflow-hidden"
             >
 
-              <div className="relative flex-grow rounded-2xl overflow-hidden border border-coffee-700/50 shadow-2xl aspect-[1/1] lg:aspect-auto bg-coffee-900 flex items-center justify-center">
+              <div className="relative flex-grow rounded-2xl overflow-hidden border border-coffee-700/50 shadow-2xl aspect-[5/4] lg:aspect-auto bg-coffee-900 flex items-center justify-center">
                 <img
                   src="/cafe_interior.png"
                   alt="Modern Cafe Interior"
@@ -140,11 +140,6 @@ const Login = ({ onJoin, theme, toggleTheme, userName }) => {
             </motion.div>
           </div>
 
-        </div>
-
-        {/* Footer */}
-        <div className="text-coffee-500 text-[10px] uppercase font-bold tracking-widest mt-4">
-          RL Intelligence Pack v4.2 • Stable Release
         </div>
       </div>
     </div>
