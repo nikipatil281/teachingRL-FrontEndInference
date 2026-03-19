@@ -10,7 +10,7 @@ From repo root:
 python3 -m venv scripts/venv
 source scripts/venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-backend.txt
 ```
 
 Notes:
