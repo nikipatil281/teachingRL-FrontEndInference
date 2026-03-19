@@ -47,6 +47,9 @@ const createInitialPolicyQuizState = () => ({
   nextScenarioId: 2,
 });
 
+const COMPACT_DASHBOARD_WIDTH = 1280;
+const COMPACT_DASHBOARD_HEIGHT = 900;
+
 const SessionLeaveConfirmModal = ({ isOpen, actionLabel, onCancel, onConfirm }) => {
   if (!isOpen) return null;
 
@@ -161,6 +164,10 @@ const Dashboard = ({
   const [showPolicyQuizPage, setShowPolicyQuizPage] = useState(false);
   const [policyQuizState, setPolicyQuizState] = useState(createInitialPolicyQuizState);
   const [pendingLeaveAction, setPendingLeaveAction] = useState(null);
+  const [useCompactDashboardLayout, setUseCompactDashboardLayout] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < COMPACT_DASHBOARD_WIDTH || window.innerHeight < COMPACT_DASHBOARD_HEIGHT;
+  });
   const mutedPanelClass = showPopup
     ? "opacity-55 grayscale brightness-75"
     : "opacity-100 grayscale-0 brightness-100";
@@ -614,6 +621,18 @@ const Dashboard = ({
     setPendingLeaveAction(null);
   };
 
+  useEffect(() => {
+    const updateDashboardViewport = () => {
+      setUseCompactDashboardLayout(
+        window.innerWidth < COMPACT_DASHBOARD_WIDTH || window.innerHeight < COMPACT_DASHBOARD_HEIGHT
+      );
+    };
+
+    updateDashboardViewport();
+    window.addEventListener("resize", updateDashboardViewport);
+    return () => window.removeEventListener("resize", updateDashboardViewport);
+  }, []);
+
   if (showPolicyQuizPage) {
     return (
       <PolicyQuizPage
@@ -645,7 +664,7 @@ const Dashboard = ({
 
   return (
     <div
-      className={`min-h-screen bg-coffee-900 text-coffee-100 p-4 font-sans relative overflow-x-hidden overflow-y-auto transition-colors duration-500 flex flex-col ${theme}`}
+      className={`${useCompactDashboardLayout ? 'min-h-screen overflow-y-auto' : 'h-screen overflow-hidden'} bg-coffee-900 text-coffee-100 p-4 font-sans relative overflow-x-hidden transition-colors duration-500 flex flex-col ${theme}`}
     >
       {/* Doodle Pattern Overlay */}
       <div className={`absolute inset-0 pointer-events-none bg-doodle-mask z-0 transition-all duration-500 ${theme === 'theme-black-coffee' ? 'bg-amber-100 opacity-[0.08] mix-blend-screen' : 'bg-amber-900 opacity-[0.15] mix-blend-luminosity'}`} />
