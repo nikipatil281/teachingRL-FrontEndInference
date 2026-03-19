@@ -90,7 +90,7 @@ const LandingPage = ({ onComplete, theme, toggleTheme }) => {
   };
 
   return (
-    <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-hidden transition-colors duration-500 ${theme}`}>
+    <div className={`min-h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center justify-start md:justify-center p-4 md:p-8 relative overflow-x-hidden overflow-y-auto transition-colors duration-500 ${theme}`}>
 
       {/* Theme Toggle */}
       <div className="absolute top-6 right-6 z-50">
@@ -113,7 +113,7 @@ const LandingPage = ({ onComplete, theme, toggleTheme }) => {
         <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-orange-900/30 rounded-full blur-[120px] animate-blob [animation-delay:2s]" />
       </div>
 
-      <div className="z-10 w-full max-w-6xl bg-coffee-800/50 backdrop-blur-xl border border-coffee-700/50 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row h-full max-h-[85vh]">
+      <div className="z-10 w-full max-w-6xl bg-coffee-800/50 backdrop-blur-xl border border-coffee-700/50 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto md:max-h-[85vh] mt-16 md:mt-0">
 
         {/* Image / Visual Side */}
         <div className={`w-full md:w-1/2 relative bg-gradient-to-br ${currentStory.color} flex items-center justify-center p-8 md:p-12`}>
@@ -168,7 +168,7 @@ const LandingPage = ({ onComplete, theme, toggleTheme }) => {
         </div>
 
         {/* Content Side */}
-        <div className="w-full md:w-1/2 p-10 md:p-16 flex flex-col justify-between bg-coffee-800/80">
+        <div className="w-full md:w-1/2 p-8 md:p-16 flex flex-col justify-between bg-coffee-800/80">
           <AnimatePresence mode="wait">
             <motion.div
               key={step}

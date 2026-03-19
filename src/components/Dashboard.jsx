@@ -645,7 +645,7 @@ const Dashboard = ({
 
   return (
     <div
-      className={`h-screen bg-coffee-900 text-coffee-100 p-4 font-sans relative overflow-hidden transition-colors duration-500 flex flex-col ${theme}`}
+      className={`min-h-screen bg-coffee-900 text-coffee-100 p-4 font-sans relative overflow-x-hidden overflow-y-auto transition-colors duration-500 flex flex-col ${theme}`}
     >
       {/* Doodle Pattern Overlay */}
       <div className={`absolute inset-0 pointer-events-none bg-doodle-mask z-0 transition-all duration-500 ${theme === 'theme-black-coffee' ? 'bg-amber-100 opacity-[0.08] mix-blend-screen' : 'bg-amber-900 opacity-[0.15] mix-blend-luminosity'}`} />
