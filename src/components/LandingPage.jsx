@@ -168,70 +168,71 @@ const LandingPage = ({ onComplete, theme, toggleTheme }) => {
         </div>
 
         {/* Content Side */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-between bg-coffee-800/80 md:min-h-0 md:overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ x: 20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -20, opacity: 0 }}
-              className="flex-grow flex flex-col justify-center relative md:min-h-0"
-            >
-              {/* Story Avatar */}
+        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col bg-coffee-800/80 md:min-h-0 md:overflow-hidden">
+          <div className="flex-1 min-h-0 md:overflow-y-auto md:pr-2">
+            <AnimatePresence mode="wait">
               <motion.div
-                initial={{ scale: 0, rotate: -20 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", damping: 12, delay: 0.3 }}
-                className="absolute top-0 right-0 w-24 h-24 p-1.5 bg-coffee-700/50 rounded-full border-2 border-amber-500/30 shadow-2xl backdrop-blur-sm z-20"
+                key={step}
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                className="flex flex-col justify-center relative md:min-h-full"
               >
-                <div className="w-full h-full rounded-full overflow-hidden border border-coffee-600 shadow-inner">
-                  <img src={currentUri} alt="Story Character" className="w-full h-full object-cover" />
-                </div>
-                <div className="absolute -bottom-1 -right-1 bg-amber-500 text-coffee-950 p-1.5 rounded-full shadow-lg border-2 border-coffee-800">
-                  <Sparkles className="w-3.5 h-3.5 fill-current" />
-                </div>
-              </motion.div>
-
-              <div className="mb-8">{currentStory.icon}</div>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-8 bg-gradient-to-r from-coffee-100 to-coffee-400 bg-clip-text text-transparent leading-tight">
-                {currentStory.title}
-              </h2>
-              <p className={`text-lg md:text-xl lg:text-2xl leading-relaxed ${theme === 'theme-black-coffee' ? 'text-coffee-300' : 'text-coffee-100 font-bold'} font-medium`}>
-                {currentStory.content}
-              </p>
-
-              {/* Avatar Selection UI - Only for Story 1 */}
-              {step === 1 && (
+              {/* Story Avatar */}
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="mt-8 p-4 bg-coffee-900/40 rounded-3xl border border-coffee-700/50"
+                  initial={{ scale: 0, rotate: -20 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", damping: 12, delay: 0.3 }}
+                  className="absolute top-0 right-0 w-24 h-24 p-1.5 bg-coffee-700/50 rounded-full border-2 border-amber-500/30 shadow-2xl backdrop-blur-sm z-20"
                 >
-                  <div className="text-xs font-bold text-amber-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                    <Sparkles className="w-3 h-3" /> This is you! Choose your avatar:
+                  <div className="w-full h-full rounded-full overflow-hidden border border-coffee-600 shadow-inner">
+                    <img src={currentUri} alt="Story Character" className="w-full h-full object-cover" />
                   </div>
-                  <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
-                          {AVATAR_OPTIONS.map((seed) => (
-                      <motion.button
-                        key={seed}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setSelectedAvatar(seed)}
-                        className={`shrink-0 w-14 h-14 rounded-full border-2 p-0.5 transition-all shadow-md ${selectedAvatar === seed ? 'border-amber-500 bg-amber-500/20 shadow-amber-500/20' : 'border-coffee-700 bg-coffee-800/50 hover:border-coffee-500'}`}
-                      >
-                        <div className="w-full h-full rounded-full overflow-hidden border border-coffee-700">
-                          <img src={avatarUriMap[seed]} alt={seed} className="w-full h-full object-cover" />
-                        </div>
-                      </motion.button>
-                    ))}
+                  <div className="absolute -bottom-1 -right-1 bg-amber-500 text-coffee-950 p-1.5 rounded-full shadow-lg border-2 border-coffee-800">
+                    <Sparkles className="w-3.5 h-3.5 fill-current" />
                   </div>
                 </motion.div>
-              )}
-            </motion.div>
-          </AnimatePresence>
+                <div className="mb-8">{currentStory.icon}</div>
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-8 bg-gradient-to-r from-coffee-100 to-coffee-400 bg-clip-text text-transparent leading-tight">
+                  {currentStory.title}
+                </h2>
+                <p className={`text-lg md:text-xl lg:text-2xl leading-relaxed ${theme === 'theme-black-coffee' ? 'text-coffee-300' : 'text-coffee-100 font-bold'} font-medium`}>
+                  {currentStory.content}
+                </p>
 
-          <div className="mt-8">
+                {/* Avatar Selection UI - Only for Story 1 */}
+                {step === 1 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="mt-8 p-4 bg-coffee-900/40 rounded-3xl border border-coffee-700/50"
+                  >
+                    <div className="text-xs font-bold text-amber-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                      <Sparkles className="w-3 h-3" /> This is you! Choose your avatar:
+                    </div>
+                    <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
+                      {AVATAR_OPTIONS.map((seed) => (
+                        <motion.button
+                          key={seed}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => setSelectedAvatar(seed)}
+                          className={`shrink-0 w-14 h-14 rounded-full border-2 p-0.5 transition-all shadow-md ${selectedAvatar === seed ? 'border-amber-500 bg-amber-500/20 shadow-amber-500/20' : 'border-coffee-700 bg-coffee-800/50 hover:border-coffee-500'}`}
+                        >
+                          <div className="w-full h-full rounded-full overflow-hidden border border-coffee-700">
+                            <img src={avatarUriMap[seed]} alt={seed} className="w-full h-full object-cover" />
+                          </div>
+                        </motion.button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <div className="mt-6 shrink-0 border-t border-coffee-700/40 pt-6">
             <div className="flex flex-col gap-3">
               <motion.button
                 whileHover={{ scale: 1.02 }}
