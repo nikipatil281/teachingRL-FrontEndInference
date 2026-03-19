@@ -61,7 +61,7 @@ export const BackendStatusButton = ({ mlState, rlState, onOpen, className = "" }
   );
 };
 
-const BackendStatusPopup = ({ mlState, rlState, onDismiss, onOpen, phase }) => {
+const BackendStatusPopup = ({ mlState, rlState, isOpen, onClose, phase }) => {
   const allReady = mlState === "ready" && rlState === "ready";
   const isPhase2Intro = phase === "pre-simulation";
 
@@ -71,46 +71,44 @@ const BackendStatusPopup = ({ mlState, rlState, onDismiss, onOpen, phase }) => {
       ? "We are waking the ML advisor and RL benchmark now so they can join you as Phase 2 begins."
       : "The app is waking the assistant services in the background.";
 
-  if (!onOpen) {
-    return (
-      <div className="fixed bottom-5 left-5 z-50 w-[min(92vw,360px)] rounded-2xl border border-coffee-700/70 bg-coffee-950/92 p-4 shadow-2xl backdrop-blur">
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.18em] text-amber-400">
-              {allReady ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
-              Server Status
-            </div>
-            <p className="mt-1 text-xs text-coffee-300">{summaryText}</p>
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed right-4 top-20 z-50 w-[min(92vw,360px)] rounded-2xl border border-coffee-700/70 bg-coffee-950/95 p-4 shadow-2xl backdrop-blur md:right-8 md:top-24">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.18em] text-amber-400">
+            {allReady ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+            Server Status
           </div>
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="rounded-full border border-coffee-700 bg-coffee-900 p-1.5 text-coffee-300 transition-colors hover:text-coffee-50"
-            aria-label="Close backend status"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <p className="mt-1 text-xs text-coffee-300">{summaryText}</p>
         </div>
-
-        <div className="space-y-3">
-          <BackendStatusRow
-            icon={Cpu}
-            title="ML Advisor"
-            description="Used for price suggestions and week-by-week guidance."
-            state={mlState}
-          />
-          <BackendStatusRow
-            icon={BrainCircuit}
-            title="RL Agent"
-            description="Used for the RL benchmark opponent and policy suggestions."
-            state={rlState}
-          />
-        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-full border border-coffee-700 bg-coffee-900 p-1.5 text-coffee-300 transition-colors hover:text-coffee-50"
+          aria-label="Close backend status"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
-    );
-  }
 
-  return null;
+      <div className="space-y-3">
+        <BackendStatusRow
+          icon={Cpu}
+          title="ML Advisor"
+          description="Used for price suggestions and week-by-week guidance."
+          state={mlState}
+        />
+        <BackendStatusRow
+          icon={BrainCircuit}
+          title="RL Agent"
+          description="Used for the RL benchmark opponent and policy suggestions."
+          state={rlState}
+        />
+      </div>
+    </div>
+  );
 };
 
 export default BackendStatusPopup;

@@ -98,8 +98,7 @@ const Dashboard = ({
   userAvatar = 'Leo',
   backendStatus,
   onSimulationComplete,
-  showBackendStatusButton,
-  onOpenBackendStatus,
+  onToggleBackendStatus,
 }) => {
   const DEFAULT_PLAYER_PRICE = 1;
 
@@ -671,13 +670,11 @@ const Dashboard = ({
           </p>
         </div>
         <div className="flex items-center gap-4 md:gap-8 justify-end w-full md:w-auto">
-          {showBackendStatusButton && onOpenBackendStatus && (
-            <BackendStatusButton
-              mlState={backendStatus?.ml?.state ?? "idle"}
-              rlState={backendStatus?.rl?.state ?? "idle"}
-              onOpen={onOpenBackendStatus}
-            />
-          )}
+          <BackendStatusButton
+            mlState={backendStatus?.ml?.state ?? "idle"}
+            rlState={backendStatus?.rl?.state ?? "idle"}
+            onOpen={onToggleBackendStatus}
+          />
           <button
             onClick={toggleTheme}
             className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-coffee-700 bg-coffee-800 hover:bg-coffee-700 transition-colors text-xs font-bold shadow-md"
@@ -859,6 +856,9 @@ const Dashboard = ({
                     </div>
                     <div className="mt-2 text-[10px] text-coffee-400/80 leading-tight relative z-10">
                       {mlReady ? "Sequential RandomForest model price prediction." : "Waiting for ML backend..."}
+                    </div>
+                    <div className="mt-1 text-[9px] leading-tight text-coffee-400/70 relative z-10">
+                      If this box looks greyed out instead of amber, the ML and RL server may not be active yet. Check the top-right Server Status button.
                     </div>
                   </div>
 

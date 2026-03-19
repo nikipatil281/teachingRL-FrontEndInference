@@ -23,7 +23,6 @@ const ACTIVE_BACKEND_PHASES = new Set([
 
 const BACKEND_STATUS_VISIBLE_PHASES = new Set([
   'pre-simulation',
-  'transition',
   'simulation',
 ]);
 
@@ -39,7 +38,7 @@ function App() {
   const [userName, setUserName] = useState('');
   const [userAvatar, setUserAvatar] = useState('Leo');
   const [backendStatus, setBackendStatus] = useState(initialBackendState);
-  const [backendPopupDismissed, setBackendPopupDismissed] = useState(false);
+  const [backendStatusOpen, setBackendStatusOpen] = useState(false);
   const [simulationComplete, setSimulationComplete] = useState(false);
 
   const shouldManageBackends = useMemo(
@@ -62,12 +61,12 @@ function App() {
     if (uName && uName.trim()) {
       setUserName(uName.trim());
     }
-    setBackendPopupDismissed(false);
+    setBackendStatusOpen(false);
     setPhase('landing');
   };
 
   const handleRestart = () => {
-    setBackendPopupDismissed(false);
+    setBackendStatusOpen(false);
     setSimulationComplete(false);
     setPhase('pre-simulation');
   };
@@ -76,7 +75,7 @@ function App() {
     setShopName('You');
     setUserName('');
     setUserAvatar('Leo');
-    setBackendPopupDismissed(false);
+    setBackendStatusOpen(false);
     setSimulationComplete(false);
     setPhase('login');
   };
@@ -154,12 +153,14 @@ function App() {
       )}
       {phase === 'pre-simulation' && (
         <PrePhase2Transition
-          onComplete={() => setPhase('transition')}
+          onComplete={() => {
+            setBackendStatusOpen(false);
+            setPhase('transition');
+          }}
           theme={theme}
           toggleTheme={toggleTheme}
           backendStatus={backendStatus}
-          showBackendStatusButton={backendPopupDismissed}
-          onOpenBackendStatus={() => setBackendPopupDismissed(false)}
+          onToggleBackendStatus={() => setBackendStatusOpen((current) => !current)}
         />
       )}
       {phase === 'transition' && (
@@ -179,16 +180,15 @@ function App() {
           onExitToLogin={handleExitToLogin}
           backendStatus={backendStatus}
           onSimulationComplete={() => setSimulationComplete(true)}
-          showBackendStatusButton={backendPopupDismissed}
-          onOpenBackendStatus={() => setBackendPopupDismissed(false)}
+          onToggleBackendStatus={() => setBackendStatusOpen((current) => !current)}
         />
       )}
       {shouldManageBackends && shouldShowBackendStatusUi && (
         <BackendStatusPopup
           mlState={backendStatus.ml.state}
           rlState={backendStatus.rl.state}
-          onDismiss={() => setBackendPopupDismissed(true)}
-          onOpen={backendPopupDismissed ? () => setBackendPopupDismissed(false) : null}
+          isOpen={backendStatusOpen}
+          onClose={() => setBackendStatusOpen(false)}
           phase={phase}
         />
       )}

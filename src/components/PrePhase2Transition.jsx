@@ -8,8 +8,7 @@ const PrePhase2Transition = ({
     theme,
     toggleTheme,
     backendStatus,
-    showBackendStatusButton,
-    onOpenBackendStatus,
+    onToggleBackendStatus,
 }) => {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const controls = useAnimation();
@@ -80,13 +79,11 @@ const PrePhase2Transition = ({
         <div className={`min-h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center justify-center p-2 md:p-8 relative overflow-y-auto transition-colors duration-500 ${theme}`}>
 
             <div className="absolute right-4 top-4 z-20 flex items-center gap-3 md:right-8 md:top-8">
-                {showBackendStatusButton && onOpenBackendStatus && (
-                    <BackendStatusButton
-                        mlState={mlState}
-                        rlState={rlState}
-                        onOpen={onOpenBackendStatus}
-                    />
-                )}
+                <BackendStatusButton
+                    mlState={mlState}
+                    rlState={rlState}
+                    onOpen={onToggleBackendStatus}
+                />
                 <button
                     type="button"
                     onClick={toggleTheme}
@@ -122,7 +119,7 @@ const PrePhase2Transition = ({
                         Phase 2 (Main Simulation)
                     </h1>
                     <p className="text-lg md:text-xl text-coffee-300 font-medium max-w-2xl mx-auto">
-                        Welcome to the 28-day challenge. It's time to refine your pricing strategies alongside an Machine Learning (ML) advisor.!
+                        Welcome to the 28-day challenge. It's time to refine your pricing strategies alongside an Machine Learning (ML) advisor!
                     </p>
                     <p className="mt-3 text-sm md:text-base text-coffee-400 font-medium max-w-3xl mx-auto">
                         While you review this page, the app is quietly waking the ML advisor and RL benchmark in the background so both are ready once the 28-day simulation starts.
