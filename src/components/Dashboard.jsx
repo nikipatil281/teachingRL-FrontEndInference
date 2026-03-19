@@ -770,15 +770,15 @@ const Dashboard = ({
             </div>
 
             {/* Tier 2: Graph and Map (50/50 Split) matching Tutorial */}
-            <div className="w-full flex-grow min-h-0 flex flex-col md:flex-row gap-4 lg:gap-6">
-              <div className="md:w-1/2 bg-coffee-800/50 rounded-2xl border border-coffee-700/50 h-full flex flex-col overflow-hidden">
+            <div className={`w-full ${useCompactDashboardLayout ? 'flex-none' : 'flex-grow min-h-0'} flex flex-col ${useCompactDashboardLayout ? '' : 'md:flex-row'} gap-4 lg:gap-6`}>
+              <div className={`${useCompactDashboardLayout ? 'w-full h-[320px] md:h-[360px]' : 'md:w-1/2 h-full'} bg-coffee-800/50 rounded-2xl border border-coffee-700/50 flex flex-col overflow-hidden`}>
                 <div className="flex-grow w-full">
                   <ProfitChart data={history} showRLAgents={true} shopName={shopName} hideRLLine={true} hideMLReward={true} hideRLRewardLine={true} />
                 </div>
               </div>
 
               {/* Animation / Simulation Box */}
-              <div className={`md:w-1/2 bg-coffee-800/50 rounded-2xl h-full flex flex-col overflow-hidden relative group transition-all duration-300 ${mutedPanelClass}`}>
+              <div className={`${useCompactDashboardLayout ? 'w-full h-[320px] md:h-[360px]' : 'md:w-1/2 h-full'} bg-coffee-800/50 rounded-2xl flex flex-col overflow-hidden relative group transition-all duration-300 ${mutedPanelClass}`}>
                 <div className="absolute inset-0 w-full h-full xl:bg-coffee-900/80 overflow-hidden flex items-center justify-center">
                   <div className="absolute inset-0 w-full h-full">
                     <CafeMap shopName={shopName} weather={conditions.weather} competitorPresent={conditions.competitorPresent} userAvatar={userAvatar} />
@@ -789,9 +789,9 @@ const Dashboard = ({
             </div>
 
             {/* Tier 3: Controls & Chart + Insights (Split 38/62) */}
-            <div className="flex flex-col lg:flex-row gap-4 shrink-0 lg:h-[190px]">
+            <div className={`flex flex-col ${useCompactDashboardLayout ? '' : 'lg:flex-row'} gap-4 shrink-0 ${useCompactDashboardLayout ? '' : 'lg:h-[190px]'}`}>
               {/* Left: Price Selection & Settings */}
-              <div className="lg:w-[38%] flex flex-col">
+              <div className={`${useCompactDashboardLayout ? '' : 'lg:w-[38%]'} flex flex-col`}>
                 <div className={`${theme === 'theme-latte'
                   ? 'bg-gradient-to-br from-amber-100/85 via-amber-50/80 to-orange-100/75 border-amber-500/70 ring-amber-500/35 shadow-amber-500/20'
                   : 'bg-gradient-to-br from-amber-700/35 via-coffee-700/85 to-coffee-800/85 border-amber-400/55 ring-amber-300/35 shadow-amber-900/20'
@@ -869,13 +869,13 @@ const Dashboard = ({
               </div>
 
               {/* Right: Insights Grid (Split ML Box and Feedback Box) */}
-              <div className="lg:w-[62%] flex flex-col gap-4">
+              <div className={`${useCompactDashboardLayout ? '' : 'lg:w-[62%]'} flex flex-col gap-4`}>
 
                 {/* Top Row: Chart (moved from below so it sits at the top of the right column!) */}
                 {/* Wait, user asked to separate ML box and insight box. Let's arrange them side by side. */}
-                <div className="flex flex-row gap-4 h-[180px] min-w-0">
+                <div className={`flex gap-4 min-w-0 ${useCompactDashboardLayout ? 'flex-col' : 'flex-row h-[180px]'}`}>
                    {/* Insight 1: ML Suggestion (Sequential RF) */}
-                  <div className={`min-w-0 flex-[42] p-4 bg-coffee-800/80 rounded-xl shadow-2xl border ${mlReady ? 'border-amber-500/50' : 'border-coffee-700 opacity-50'} flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${mutedPanelClass}`}>
+                  <div className={`${useCompactDashboardLayout ? 'min-h-[180px]' : 'min-w-0 flex-[42]'} p-4 bg-coffee-800/80 rounded-xl shadow-2xl border ${mlReady ? 'border-amber-500/50' : 'border-coffee-700 opacity-50'} flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${mutedPanelClass}`}>
                     <div className={`absolute inset-0 ${mlReady ? 'bg-amber-500/5' : 'bg-blue-900/5'} mix-blend-overlay pointer-events-none`} />
                     <div className="absolute top-3 right-3 z-10 w-11 h-11">
                       <img src={mlAvatarUri} alt="ML Agent Avatar" className="w-full h-full object-contain" />
@@ -902,7 +902,7 @@ const Dashboard = ({
                   </div>
 
                   {/* Insight 2: Realized Profit Yesterday or Popup */}
-                  <div className="min-w-0 flex-[58] p-0 flex flex-col relative bg-coffee-800/80 rounded-xl shadow-2xl border border-coffee-700 overflow-hidden">
+                  <div className={`${useCompactDashboardLayout ? 'min-h-[200px]' : 'min-w-0 flex-[58]'} p-0 flex flex-col relative bg-coffee-800/80 rounded-xl shadow-2xl border border-coffee-700 overflow-hidden`}>
                     <AnimatePresence mode="wait">
                       {showPopup && feedback ? (
                         <motion.div
@@ -1002,7 +1002,7 @@ const Dashboard = ({
         </div>
 
         {/* Right Sidebar: Timeline (Desktop Only) specifically for 28 Days */}
-        <div className="hidden lg:flex flex-col items-center w-[60px] shrink-0 min-h-0 self-stretch">
+        <div className={`${useCompactDashboardLayout ? 'hidden' : 'hidden lg:flex'} flex-col items-center w-[60px] shrink-0 min-h-0 self-stretch`}>
           <div className="flex flex-col items-center w-full bg-coffee-800/30 py-4 px-2 rounded-2xl border border-coffee-700/50 relative overflow-hidden h-full min-h-0">
 
             <div className="text-[10px] font-bold text-coffee-400 relative z-10 tracking-widest uppercase mb-4 text-center leading-tight">

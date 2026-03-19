@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Play, TrendingUp, TrendingDown, Info, Coffee, CheckCircle, AlertTriangle, Sun, Moon, ArrowRight, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -27,11 +27,18 @@ const TUTORIAL_DAYS = {
   7: { day: 'Sunday', weather: 'Rainy', nearbyEvent: false, eventName: null, competitorPresent: false, competitorPrice: null, specialEvent: 'Competitor electricity out.' }
 };
 
+const COMPACT_TUTORIAL_WIDTH = 1180;
+const COMPACT_TUTORIAL_HEIGHT = 820;
+
 const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo', backendStatus }) => {
   const DEFAULT_PLAYER_PRICE = 1;
   const [day, setDay] = useState(1);
   const [conditions, setConditions] = useState(TUTORIAL_DAYS[1]);
   const [playerPrice, setPlayerPrice] = useState(DEFAULT_PLAYER_PRICE);
+  const [useCompactTutorialLayout, setUseCompactTutorialLayout] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < COMPACT_TUTORIAL_WIDTH || window.innerHeight < COMPACT_TUTORIAL_HEIGHT;
+  });
 
   // Weekly starting inventory
   const [inventory, setInventory] = useState(WEEKLY_START_INVENTORY);
@@ -84,6 +91,18 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
     };
     updateML();
   }, [conditions, mlInventory, mlReady]);
+
+  useEffect(() => {
+    const updateTutorialViewport = () => {
+      setUseCompactTutorialLayout(
+        window.innerWidth < COMPACT_TUTORIAL_WIDTH || window.innerHeight < COMPACT_TUTORIAL_HEIGHT
+      );
+    };
+
+    updateTutorialViewport();
+    window.addEventListener("resize", updateTutorialViewport);
+    return () => window.removeEventListener("resize", updateTutorialViewport);
+  }, []);
 
   const recallHistory = showPopup ? history.slice(0, -1) : history;
 
@@ -422,7 +441,7 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
   };
 
   return (
-    <div className={`h-screen bg-coffee-900 text-coffee-100 p-4 font-sans flex flex-col relative overflow-x-hidden overflow-y-auto transition-colors duration-500 ${theme}`}>
+    <div className={`${useCompactTutorialLayout ? 'h-screen overflow-y-auto' : 'h-screen overflow-hidden'} bg-coffee-900 text-coffee-100 p-4 font-sans flex flex-col relative overflow-x-hidden transition-colors duration-500 ${theme}`}>
       {/* Doodle Pattern Overlay */}
       <div className={`absolute inset-0 pointer-events-none bg-doodle-mask z-0 transition-all duration-500 ${theme === 'theme-black-coffee' ? 'bg-amber-100 opacity-[0.08] mix-blend-screen' : 'bg-amber-900 opacity-[0.15] mix-blend-luminosity'}`} />
 
@@ -478,15 +497,15 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
             </div>
 
             {/* Tier 2: Graph and Map (50/50 Split) */}
-            <div className="w-full flex-grow min-h-0 flex flex-col md:flex-row gap-4 lg:gap-6">
-              <div className="md:w-1/2 bg-coffee-800/50 rounded-2xl border border-coffee-700/50 h-full flex flex-col overflow-hidden">
+            <div className={`w-full ${useCompactTutorialLayout ? 'flex-none' : 'flex-grow min-h-0'} flex flex-col ${useCompactTutorialLayout ? '' : 'md:flex-row'} gap-4 lg:gap-6`}>
+              <div className={`${useCompactTutorialLayout ? 'w-full h-[320px] md:h-[360px]' : 'md:w-1/2 h-full'} bg-coffee-800/50 rounded-2xl border border-coffee-700/50 flex flex-col overflow-hidden`}>
                 <div className="flex-grow w-full">
                   <ProfitChart data={history} showRLAgents={false} showMLAgent={false} hideRLLine={true} hideRLRewardLine={true} enableRewardsView={true} shopName={shopName} />
                 </div>
               </div>
 
               {/* Animation / Simulation Box */}
-              <div className={`md:w-1/2 bg-coffee-800/50 rounded-2xl h-full flex flex-col overflow-hidden relative group transition-all duration-300 ${mutedPanelClass}`}>
+              <div className={`${useCompactTutorialLayout ? 'w-full h-[320px] md:h-[360px]' : 'md:w-1/2 h-full'} bg-coffee-800/50 rounded-2xl flex flex-col overflow-hidden relative group transition-all duration-300 ${mutedPanelClass}`}>
                 {/* Background image container for retro 2D map */}
                 <div className="absolute inset-0 w-full h-full xl:bg-coffee-900/80 overflow-hidden flex items-center justify-center">
                   <div className="absolute inset-0 w-full h-full">
@@ -499,9 +518,9 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
               </div>
             </div>
             {/* Tier 3: Controls & Insights (Split 38/62) */}
-            <div className="flex flex-col lg:flex-row gap-4 shrink-0 lg:h-[190px]">
+            <div className={`flex flex-col ${useCompactTutorialLayout ? '' : 'lg:flex-row'} gap-4 shrink-0 ${useCompactTutorialLayout ? '' : 'lg:h-[190px]'}`}>
               {/* Left: Price Selection */}
-              <div className="lg:w-[38%] flex flex-col">
+              <div className={`${useCompactTutorialLayout ? '' : 'lg:w-[38%]'} flex flex-col`}>
                 <div className={`${theme === 'theme-latte'
                   ? 'bg-gradient-to-br from-amber-100/85 via-amber-50/80 to-orange-100/75 border-amber-500/70 ring-amber-500/35 shadow-amber-500/20'
                   : 'bg-gradient-to-br from-amber-700/35 via-coffee-700/85 to-coffee-800/85 border-amber-400/55 ring-amber-300/35 shadow-amber-900/20'
@@ -573,7 +592,7 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
               </div>
 
               {/* Right: Insights / Results */}
-              <div className="lg:w-[62%] flex flex-col">
+              <div className={`${useCompactTutorialLayout ? '' : 'lg:w-[62%]'} flex flex-col min-h-[190px]`}>
                 <AnimatePresence mode="wait">
                   {showPopup && feedback ? (
                     <motion.div
@@ -682,7 +701,7 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
         </div>
 
         {/* Right Sidebar: Timeline (Desktop Only) */}
-        <div className="hidden lg:flex flex-col items-center w-[60px] shrink-0 h-full">
+        <div className={`${useCompactTutorialLayout ? 'hidden' : 'hidden lg:flex'} flex-col items-center w-[60px] shrink-0 h-full`}>
           <div className="flex flex-col items-center w-full bg-coffee-800/30 py-4 px-2 rounded-2xl border border-coffee-700/50 relative overflow-hidden h-full">
 
             <div className="text-[10px] font-bold text-coffee-400 relative z-10 tracking-widest uppercase mb-4 text-center leading-tight">
