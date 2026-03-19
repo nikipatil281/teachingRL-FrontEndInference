@@ -635,30 +635,50 @@ const Dashboard = ({
 
   if (showPolicyQuizPage) {
     return (
-      <PolicyQuizPage
-        theme={theme}
-        toggleTheme={toggleTheme}
-        onBackToPolicyReview={() => setShowPolicyQuizPage(false)}
-        onRestart={handleRestart}
-        onExitToLogin={handleExitSession}
-        quizState={policyQuizState}
-        setQuizState={setPolicyQuizState}
-      />
+      <>
+        <PolicyQuizPage
+          theme={theme}
+          toggleTheme={toggleTheme}
+          onBackToPolicyReview={() => setShowPolicyQuizPage(false)}
+          onRestart={handleRestart}
+          onExitToLogin={handleExitSession}
+          quizState={policyQuizState}
+          setQuizState={setPolicyQuizState}
+        />
+        <AnimatePresence>
+          <SessionLeaveConfirmModal
+            isOpen={pendingLeaveAction !== null}
+            actionLabel={pendingLeaveAction === "restart" ? "run it again" : "leave"}
+            onCancel={() => setPendingLeaveAction(null)}
+            onConfirm={handleConfirmLeave}
+          />
+        </AnimatePresence>
+      </>
     );
   }
 
   if (showPolicyPage) {
     return (
-      <PolicyReviewPage
-        history={history}
-        shopName={shopName}
-        onBackToDebrief={() => setShowPolicyPage(false)}
-        onGoToQuiz={() => setShowPolicyQuizPage(true)}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        onRestart={handleRestart}
-        onExitToLogin={handleExitSession}
-      />
+      <>
+        <PolicyReviewPage
+          history={history}
+          shopName={shopName}
+          onBackToDebrief={() => setShowPolicyPage(false)}
+          onGoToQuiz={() => setShowPolicyQuizPage(true)}
+          theme={theme}
+          toggleTheme={toggleTheme}
+          onRestart={handleRestart}
+          onExitToLogin={handleExitSession}
+        />
+        <AnimatePresence>
+          <SessionLeaveConfirmModal
+            isOpen={pendingLeaveAction !== null}
+            actionLabel={pendingLeaveAction === "restart" ? "run it again" : "leave"}
+            onCancel={() => setPendingLeaveAction(null)}
+            onConfirm={handleConfirmLeave}
+          />
+        </AnimatePresence>
+      </>
     );
   }
 
