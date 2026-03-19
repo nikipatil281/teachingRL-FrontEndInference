@@ -684,7 +684,7 @@ const Dashboard = ({
 
   return (
     <div
-      className={`${useCompactDashboardLayout ? 'min-h-screen overflow-y-auto' : 'h-screen overflow-hidden'} bg-coffee-900 text-coffee-100 p-4 font-sans relative overflow-x-hidden transition-colors duration-500 flex flex-col ${theme}`}
+      className={`${useCompactDashboardLayout ? 'h-screen overflow-y-auto' : 'h-screen overflow-hidden'} bg-coffee-900 text-coffee-100 p-4 font-sans relative overflow-x-hidden transition-colors duration-500 flex flex-col ${theme}`}
     >
       {/* Doodle Pattern Overlay */}
       <div className={`absolute inset-0 pointer-events-none bg-doodle-mask z-0 transition-all duration-500 ${theme === 'theme-black-coffee' ? 'bg-amber-100 opacity-[0.08] mix-blend-screen' : 'bg-amber-900 opacity-[0.15] mix-blend-luminosity'}`} />

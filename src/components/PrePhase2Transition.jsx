@@ -76,7 +76,7 @@ const PrePhase2Transition = ({
     ];
 
     return (
-        <div className={`min-h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center justify-center p-2 md:p-8 relative overflow-y-auto transition-colors duration-500 ${theme}`}>
+        <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center justify-center p-2 md:p-8 relative overflow-y-auto transition-colors duration-500 ${theme}`}>
 
             <div className="absolute right-4 top-4 z-20 flex items-center gap-3 md:right-8 md:top-8">
                 <BackendStatusButton

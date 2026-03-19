@@ -95,7 +95,7 @@ const PrePhase1Transition = ({ onComplete, onBackToStory, theme }) => {
     ];
 
     return (
-        <div className={`min-h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-y-auto transition-colors duration-500 ${theme}`}>
+        <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-y-auto transition-colors duration-500 ${theme}`}>
 
             {/* Background Decor */}
             <div className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${theme === 'theme-black-coffee' ? 'opacity-40 mix-blend-screen' : 'opacity-40 mix-blend-color-burn'}`}>
