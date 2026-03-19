@@ -1,6 +1,6 @@
 // MLAgent.js - Uses deployable ML prediction backend
 
-const ML_API_BASE_URL = (
+export const ML_API_BASE_URL = (
     import.meta.env.VITE_ML_API_URL
     || "http://127.0.0.1:5002"
 ).replace(/\/$/, "");

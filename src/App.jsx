@@ -1,22 +1,48 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import Tutorial from './components/Tutorial';
 import Dashboard from './components/Dashboard';
-import TransitionPhase from './components/TransitionPhase'; // Added Import
+import TransitionPhase from './components/TransitionPhase';
 import PrePhaselTransition from './components/PrePhase1Transition';
 import Phase1Instructions from './components/Phase1Instructions';
 import PrePhase2Transition from './components/PrePhase2Transition';
+import BackendStatusPopup from './components/BackendStatusPopup';
+import { ML_API_BASE_URL } from './logic/MLAgent';
+import { rlAgent } from './logic/RLAgent';
+import { pingBackendHealth } from './logic/backendHealth';
+
+const ACTIVE_BACKEND_PHASES = new Set([
+  'pre-tutorial',
+  'orientation-instructions',
+  'tutorial',
+  'pre-simulation',
+  'transition',
+  'simulation',
+]);
+
+const initialBackendState = {
+  ml: { ready: false, state: 'idle' },
+  rl: { ready: false, state: 'idle' },
+};
 
 function App() {
-  const [phase, setPhase] = useState('login'); // 'login', 'landing', 'pre-tutorial', 'orientation-instructions', 'tutorial', 'transition', 'simulation'
-  const [theme, setTheme] = useState('theme-black-coffee'); // 'theme-black-coffee' or 'theme-latte'
-  const [shopName, setShopName] = useState('You'); // Default shop name
+  const [phase, setPhase] = useState('login');
+  const [theme, setTheme] = useState('theme-black-coffee');
+  const [shopName, setShopName] = useState('You');
   const [userName, setUserName] = useState('');
-  const [userAvatar, setUserAvatar] = useState('Leo'); // Chosen avatar seed
+  const [userAvatar, setUserAvatar] = useState('Leo');
+  const [backendStatus, setBackendStatus] = useState(initialBackendState);
+  const [backendPopupDismissed, setBackendPopupDismissed] = useState(false);
+  const [simulationComplete, setSimulationComplete] = useState(false);
+
+  const shouldManageBackends = useMemo(
+    () => ACTIVE_BACKEND_PHASES.has(phase) && !simulationComplete,
+    [phase, simulationComplete]
+  );
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'theme-black-coffee' ? 'theme-latte' : 'theme-black-coffee');
+    setTheme((prev) => (prev === 'theme-black-coffee' ? 'theme-latte' : 'theme-black-coffee'));
   };
 
   const handleJoin = (sName, uName) => {
@@ -26,10 +52,13 @@ function App() {
     if (uName && uName.trim()) {
       setUserName(uName.trim());
     }
+    setBackendPopupDismissed(false);
     setPhase('landing');
   };
 
   const handleRestart = () => {
+    setBackendPopupDismissed(false);
+    setSimulationComplete(false);
     setPhase('pre-simulation');
   };
 
@@ -37,8 +66,52 @@ function App() {
     setShopName('You');
     setUserName('');
     setUserAvatar('Leo');
+    setBackendPopupDismissed(false);
+    setSimulationComplete(false);
     setPhase('login');
   };
+
+  useEffect(() => {
+    if (!shouldManageBackends) return undefined;
+
+    let cancelled = false;
+
+    const refreshBackendStatus = async () => {
+      setBackendStatus((current) => ({
+        ml: current.ml.ready ? current.ml : { ready: false, state: 'warming' },
+        rl: current.rl.ready ? current.rl : { ready: false, state: 'warming' },
+      }));
+
+      const [mlResult, rlResult] = await Promise.all([
+        pingBackendHealth(ML_API_BASE_URL),
+        pingBackendHealth(rlAgent.baseUrl),
+      ]);
+
+      if (cancelled) return;
+
+      setBackendStatus({
+        ml: {
+          ready: mlResult.ok,
+          state: mlResult.ok ? 'ready' : mlResult.status,
+        },
+        rl: {
+          ready: rlResult.ok,
+          state: rlResult.ok ? 'ready' : rlResult.status,
+        },
+      });
+    };
+
+    refreshBackendStatus();
+    const intervalId = window.setInterval(
+      refreshBackendStatus,
+      phase === 'simulation' ? 240000 : 180000
+    );
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [phase, shouldManageBackends]);
 
   return (
     <div className={`App ${theme}`}>
@@ -46,10 +119,40 @@ function App() {
       {phase === 'landing' && <LandingPage onComplete={(avatar) => { setUserAvatar(avatar || 'Leo'); setPhase('pre-tutorial'); }} theme={theme} toggleTheme={toggleTheme} />}
       {phase === 'pre-tutorial' && <PrePhaselTransition onComplete={() => setPhase('orientation-instructions')} onBackToStory={() => setPhase('landing')} theme={theme} />}
       {phase === 'orientation-instructions' && <Phase1Instructions onComplete={() => setPhase('tutorial')} theme={theme} toggleTheme={toggleTheme} />}
-      {phase === 'tutorial' && <Tutorial onComplete={() => setPhase('pre-simulation')} theme={theme} toggleTheme={toggleTheme} shopName={shopName} userName={userName} userAvatar={userAvatar} />}
+      {phase === 'tutorial' && (
+        <Tutorial
+          onComplete={() => setPhase('pre-simulation')}
+          theme={theme}
+          toggleTheme={toggleTheme}
+          shopName={shopName}
+          userName={userName}
+          userAvatar={userAvatar}
+          backendStatus={backendStatus}
+        />
+      )}
       {phase === 'pre-simulation' && <PrePhase2Transition onComplete={() => setPhase('transition')} theme={theme} />}
       {phase === 'transition' && <TransitionPhase onComplete={() => setPhase('simulation')} theme={theme} />}
-      {phase === 'simulation' && <Dashboard theme={theme} toggleTheme={toggleTheme} shopName={shopName} userName={userName} userAvatar={userAvatar} onRestart={handleRestart} onExitToLogin={handleExitToLogin} />}
+      {phase === 'simulation' && (
+        <Dashboard
+          theme={theme}
+          toggleTheme={toggleTheme}
+          shopName={shopName}
+          userName={userName}
+          userAvatar={userAvatar}
+          onRestart={handleRestart}
+          onExitToLogin={handleExitToLogin}
+          backendStatus={backendStatus}
+          onSimulationComplete={() => setSimulationComplete(true)}
+        />
+      )}
+      {shouldManageBackends && (
+        <BackendStatusPopup
+          mlState={backendStatus.ml.state}
+          rlState={backendStatus.rl.state}
+          onDismiss={() => setBackendPopupDismissed(true)}
+          onOpen={backendPopupDismissed ? () => setBackendPopupDismissed(false) : null}
+        />
+      )}
     </div>
   );
 }

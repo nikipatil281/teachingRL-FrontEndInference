@@ -25,7 +25,7 @@ import {
   getNormalizedPrice,
   WEEKLY_START_INVENTORY
 } from "../logic/MarketEngine";
-import { getMLPrice, initMLModel } from "../logic/MLAgent";
+import { getMLPrice } from "../logic/MLAgent";
 import { rlAgent } from "../logic/RLAgent";
 
 const createInitialPolicyQuizState = () => ({
@@ -46,7 +46,7 @@ const createInitialPolicyQuizState = () => ({
   nextScenarioId: 2,
 });
 
-const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, onExitToLogin, userAvatar = 'Leo' }) => {
+const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, onExitToLogin, userAvatar = 'Leo', backendStatus, onSimulationComplete }) => {
   const DEFAULT_PLAYER_PRICE = 1;
 
   // Game State
@@ -99,7 +99,6 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, onExitTo
   const [weekData, setWeekData] = useState(null);
   const [toast] = useState(null);
   const [gameActive] = useState(true);
-  const [mlReady, setMlReady] = useState(false);
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [pendingNextDayStr, setPendingNextDayStr] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
@@ -121,6 +120,8 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, onExitTo
   );
 
   const toGamePrice = (value) => getNormalizedPrice(value);
+  const mlReady = backendStatus?.ml?.ready ?? false;
+  const rlReady = backendStatus?.rl?.ready ?? false;
 
   const recallHistory = showPopup ? history.slice(0, -1) : history;
 
@@ -152,15 +153,6 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, onExitTo
     return null;
   };
   const memoryData = getMemoryRecall();
-
-  // 1. Initialize ML Model (Backend check)
-  useEffect(() => {
-    const init = async () => {
-      const ready = await initMLModel();
-      setMlReady(ready);
-    };
-    init();
-  }, []);
 
   const updateSuggestions = useEffectEvent(async () => {
     if (!mlReady) return;
@@ -194,7 +186,12 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, onExitTo
   // 2. Update Suggestions when conditions change
   useEffect(() => {
     updateSuggestions();
-  }, [conditions, mlReady]);
+  }, [conditions, mlReady, rlReady]);
+
+  const openEndgameModal = () => {
+    onSimulationComplete?.();
+    setModalOpen(true);
+  };
 
   const handleStartDay = () => {
     if (!gameActive || showPopup) return;
@@ -468,7 +465,7 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, onExitTo
 
     // End Game Trap
     if (day >= 28) {
-      setModalOpen(true);
+      openEndgameModal();
       return;
     }
 
@@ -515,14 +512,14 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, onExitTo
 
       // End game after week 4 report
       if (day === 28) {
-        setModalOpen(true);
+        openEndgameModal();
         return;
       }
 
       advanceDay(nextDayNum, pendingNextDayStr.pInv, pendingNextDayStr.mInv, pendingNextDayStr.rInv, pendingNextDayStr.cInv);
     } else {
       if (day === 28) {
-        setModalOpen(true);
+        openEndgameModal();
       } else {
         advanceDay(day + 1);
       }
@@ -630,9 +627,9 @@ const Dashboard = ({ theme, toggleTheme, shopName, userName, onRestart, onExitTo
             <div className="text-xs font-semibold text-coffee-400">
               {conditions.day}
             </div>
-            {rlSuggestion.state === "fallback" && (
+            {!rlReady && (
               <div className="text-[10px] font-semibold text-red-400">
-                RL backend offline - fallback price $5.00 in use
+                RL service is waking up - fallback price $5.00 is temporarily in use
               </div>
             )}
           </div>

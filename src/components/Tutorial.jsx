@@ -10,7 +10,7 @@ import {
   getNormalizedPrice,
   WEEKLY_START_INVENTORY
 } from '../logic/MarketEngine';
-import { getMLPrice, initMLModel } from "../logic/MLAgent";
+import { getMLPrice } from "../logic/MLAgent";
 import MarketView from './MarketView';
 import ProfitChart from './ProfitChart';
 import EmergencyRestockModal from './EmergencyRestockModal';
@@ -27,7 +27,7 @@ const TUTORIAL_DAYS = {
   7: { day: 'Sunday', weather: 'Rainy', nearbyEvent: false, eventName: null, competitorPresent: false, competitorPrice: null, specialEvent: 'Competitor electricity out.' }
 };
 
-const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo' }) => {
+const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo', backendStatus }) => {
   const DEFAULT_PLAYER_PRICE = 1;
   const [day, setDay] = useState(1);
   const [conditions, setConditions] = useState(TUTORIAL_DAYS[1]);
@@ -56,7 +56,7 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
 
   const [mlInventory, setMlInventory] = useState(WEEKLY_START_INVENTORY);
   const [mlSuggestion, setMLSuggestion] = useState(5);
-  const [mlReady, setMlReady] = useState(false);
+  const mlReady = backendStatus?.ml?.ready ?? false;
 
   const [feedback, setFeedback] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
@@ -67,15 +67,6 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
   const mutedPanelClass = showPopup
     ? "opacity-55 grayscale brightness-75"
     : "opacity-100 grayscale-0 brightness-100";
-
-  // Initialize ML Model
-  React.useEffect(() => {
-    const init = async () => {
-      const ready = await initMLModel();
-      setMlReady(ready);
-    };
-    init();
-  }, []);
 
   // Update ML Suggestions
   React.useEffect(() => {
