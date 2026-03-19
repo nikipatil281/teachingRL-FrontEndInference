@@ -947,7 +947,6 @@ const Dashboard = ({
                                   </div>
                                   <div className="flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 border bg-violet-100/95 border-violet-300 text-violet-900 shadow-md dark:bg-violet-500/25 dark:border-violet-400/40 dark:text-violet-100">
                                     <div className="flex items-center gap-1">
-                                      <DollarSign className="w-3 h-3" />
                                       <span className="text-sm font-black leading-none">{(feedback.playerReward ?? 0).toFixed(1)}</span>
                                     </div>
                                     <span className="text-[7px] uppercase tracking-widest mt-1 leading-none opacity-85">Net Reward</span>
