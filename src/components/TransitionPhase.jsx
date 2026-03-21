@@ -24,124 +24,175 @@ const TransitionPhase = ({ onComplete, theme }) => {
     <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center relative overflow-y-auto transition-colors duration-500 ${theme}`}>
       <style>
         {`
-          .transition-loader {
-            width: 100px;
-            height: 80px;
+          .transition-mug-loader {
             position: relative;
+            width: 76px;
+            height: 84px;
+          }
+
+          .transition-mug-loader .transition-mug-container {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            width: 76px;
+            height: 72px;
+            transform: translate(-50%, 0);
+          }
+
+          .transition-mug-loader .transition-mug-steam {
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            width: 72px;
+            height: 50px;
+            z-index: 44;
+            opacity: 0.8;
             display: flex;
-            justify-items: center;
-            align-items: center;
+            filter: blur(10px);
+            -webkit-filter: blur(10px);
+            transform: translateX(-50%);
+            animation: transition-steam-drift 4.6s ease-in-out infinite alternate;
           }
 
-          .transition-loader .cup {
-            position: absolute;
-            width: 25px;
-            height: 18px;
-            background-color: #fff;
-            border: 1px solid #2e2e2e;
-            z-index: 1;
-            border-radius: 2px 2px 10px 10px;
-            animation: transition-expansion 5s infinite ease-in-out;
-            transform-origin: center;
-          }
-
-          .transition-loader .cup::after {
+          .transition-mug-loader .transition-mug-steam::before {
             content: "";
+            width: 72px;
+            height: 50px;
+            background-color: white;
+            animation: transition-fade-out-up linear 5s infinite forwards;
+            clip-path: polygon(
+              33% 40%,
+              52% 12%,
+              84% 29%,
+              62% 65%,
+              54% 89%,
+              73% 92%,
+              73% 74%,
+              53% 63%,
+              77% 57%,
+              95% 31%,
+              71% 3%,
+              34% 47%,
+              50% 37%,
+              69% 39%,
+              69% 29%,
+              76% 35%,
+              61% 6%,
+              64% 47%,
+              91% 9%,
+              51% 5%,
+              84% 61%,
+              91% 49%,
+              35% 19%,
+              40% 10%,
+              57% 41%,
+              57% 54%,
+              92% 19%
+            );
+            border-radius: 60% 50%;
+          }
+
+          .transition-mug-loader .transition-mug {
+            position: relative;
+            width: 76px;
+            height: 72px;
+            background-color: rgba(255, 245, 245, 1);
+            border-radius: 5px 5px 50% 50%;
+            box-shadow: inset -5px -1px 0px 3px rgba(239, 234, 234, 1);
+            -webkit-box-shadow: inset -5px -1px 0px 3px rgba(239, 234, 234, 1);
+          }
+
+          .transition-mug-loader .transition-mug::before {
             position: absolute;
-            top: -2px;
-            width: calc(100% - 2px);
-            height: 2px;
-            background: #fed59fca;
-            border: 1px solid #2e2e2ebe;
+            display: block;
+            width: 76px;
+            height: 13px;
+            content: "";
             border-radius: 50%;
+            top: -6px;
+            left: 0;
+            z-index: 2;
+            box-shadow:
+              inset 2px 2px 0 0 rgb(245 245 245 / 50%),
+              inset 0 0 0 1.5px rgb(255 245 245),
+              inset 0 3px 0 1px rgb(225 225 225);
+            -webkit-box-shadow:
+              inset 2px 2px 0 0 rgb(245 245 245 / 50%),
+              inset 0 0 0 1.5px rgb(255 245 245),
+              inset 0 3px 0 1px rgb(225 225 225);
           }
 
-          .transition-loader .cup .cup-handle {
+          .transition-mug-loader .transition-mug-coffee {
             position: absolute;
-            width: 5px;
-            height: 10px;
-            background-color: #fff;
-            border: 1px solid #2e2e2e;
-            right: -5px;
-            top: 2px;
-            border-radius: 2px 10px 20px 2px;
-          }
-
-          .transition-loader .cup .smoke {
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            width: 15px;
-            height: 25px;
-            background: rgba(107, 102, 102, 0.433);
+            width: 72px;
+            height: 11px;
+            top: -6px;
+            left: 0;
             border-radius: 50%;
-            transform: translateX(-50%);
-            animation: transition-rise 5s infinite ease-in-out;
-            filter: blur(8px);
+            background: rgba(44, 31, 22, 1);
           }
 
-          .transition-loader .cup .smoke.one {
-            animation-delay: 0s;
-          }
-
-          .transition-loader .cup .smoke.two {
-            animation-delay: 0.5s;
-          }
-
-          .transition-loader .cup .smoke.three {
-            animation-delay: 1s;
-          }
-
-          .transition-loader .load {
+          .transition-mug-loader .transition-mug-handle {
             position: absolute;
-            font-size: 10px;
-            opacity: 0.7;
-            top: calc(100% + 8px);
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1;
-            text-transform: uppercase;
-            letter-spacing: 0.18em;
-            color: #d6ccc2;
+            top: 50%;
+            left: -25%;
+            transform: translateY(-50%) rotate(360deg);
+            width: 32px;
+            height: 32px;
+            border-radius: 35px 5px 15px 80%;
+            border: 6px solid #fff5f5;
+            z-index: -1;
+            box-shadow:
+              1px -2px 0px 0px rgba(239, 234, 234, 1),
+              inset -1px -2px 0px 0px rgba(239, 234, 234, 1);
+            -webkit-box-shadow:
+              1px -2px 0px 0px rgba(239, 234, 234, 1),
+              inset -1px -2px 0px 0px rgba(239, 234, 234, 1);
           }
 
-          @keyframes transition-expansion {
+          @keyframes transition-fade-out-up {
             0% {
-              width: 25px;
-              transform: translateX(0);
+              opacity: 0.6;
+              transform: translate3d(0, -20%, 0);
+            }
+            20% {
+              opacity: 0.3;
+              transform: translate3d(0, -40%, 0);
             }
             40% {
-              width: 100%;
-              transform: translateX(0);
+              opacity: 0.4;
+              transform: translate3d(0, -60%, 0);
+            }
+            60% {
+              opacity: 0.3;
+              transform: translate3d(0, -80%, 0);
             }
             80% {
-              width: 25px;
-              transform: translateX(64px);
+              opacity: 0.4;
+              transform: translate3d(0, -90%, 0);
             }
             90% {
-              width: 100%;
-              transform: translateX(0);
+              opacity: 0.2;
+              transform: translate3d(0, -95%, 0);
             }
             100% {
-              width: 25px;
-              transform: translateX(0);
+              opacity: 0;
+              transform: translate3d(0, -100%, 0);
             }
           }
 
-          @keyframes transition-rise {
+          @keyframes transition-steam-drift {
             0% {
-              transform: translate(-50%, 0) scale(0.4);
-              opacity: 0;
+              transform: translateX(-54%) translateY(2px) rotate(-4deg) scale(0.96);
+              opacity: 0.72;
             }
-            30% {
-              opacity: 0.7;
-            }
-            60% {
-              opacity: 0.4;
+            50% {
+              transform: translateX(-48%) translateY(-4px) rotate(3deg) scale(1.03);
+              opacity: 0.9;
             }
             100% {
-              transform: translate(-50%, -120px) scale(1);
-              opacity: 0;
+              transform: translateX(-52%) translateY(-8px) rotate(-2deg) scale(0.98);
+              opacity: 0.76;
             }
           }
         `}
@@ -165,14 +216,14 @@ const TransitionPhase = ({ onComplete, theme }) => {
           transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
           className="mb-4"
         >
-          <div className="transition-loader">
-            <div className="cup">
-              <div className="cup-handle" />
-              <div className="smoke one" />
-              <div className="smoke two" />
-              <div className="smoke three" />
+          <div className="transition-mug-loader">
+            <div className="transition-mug-container">
+              <div className="transition-mug-steam" />
+              <div className="transition-mug">
+                <div className="transition-mug-coffee" />
+              </div>
+              <div className="transition-mug-handle" />
             </div>
-            <div className="load">Brewing</div>
           </div>
         </motion.div>
         <motion.div
