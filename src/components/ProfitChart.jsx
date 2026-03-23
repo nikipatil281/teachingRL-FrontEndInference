@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
     ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Scatter
 } from 'recharts';
-import { Calendar, CloudSun, CloudRain, Sun, Star, Store, Coffee, DollarSign, Coins, Check, X, Award, AlertCircle } from 'lucide-react';
+import { Calendar, Cloud, CloudRain, Sun, Star, Store, Coffee, DollarSign, Coins, Check, X, Award, AlertCircle } from 'lucide-react';
 
 const ZeroLineAxisTick = ({ cx, cy, payload }) => {
     if (!payload?.showZeroLineLabel) {
@@ -654,7 +654,7 @@ const ProfitChart = ({ data, showRLAgents = true, showMLAgent = true, hideRLLine
                                                 <td className="p-2 text-center">
                                                     {row.weather === 'Sunny' ? <Sun className="w-4 h-4 mx-auto text-amber-500" /> :
                                                         row.weather === 'Rainy' ? <CloudRain className="w-4 h-4 mx-auto text-blue-400" /> :
-                                                            <CloudSun className="w-4 h-4 mx-auto text-gray-400" />}
+                                                            <Cloud className="w-4 h-4 mx-auto text-gray-400" />}
                                                 </td>
                                                 <td className="p-2 text-center">
                                                     {row.nearbyEvent ? <Check className="w-4 h-4 mx-auto text-emerald-500" /> : <X className="w-4 h-4 mx-auto text-red-500/50" />}
@@ -665,7 +665,7 @@ const ProfitChart = ({ data, showRLAgents = true, showMLAgent = true, hideRLLine
                                                 <td className="p-2 text-center font-mono">{row.startInventory ?? '-'}</td>
                                                 <td className="p-2 text-center font-mono text-emerald-400">${Math.round(row.playerPrice ?? 0)}</td>
                                                 <td className="p-2 text-center font-mono text-amber-500">{row.playerSales}</td>
-                                                <td className="p-2 text-center font-mono font-bold text-yellow-500">${(row.playerDailyGrossProfit ?? 0).toFixed(1)}</td>
+                                                <td className="p-2 text-center font-mono font-bold text-yellow-500">${Math.round(row.playerDailyGrossProfit ?? 0)}</td>
                                                 <td className="p-2 text-center font-mono text-purple-400">{row.playerDailyRewardPoints?.toFixed(1) || row.playerDailyReward?.toFixed(1) || '0'}</td>
                                                 <td className="p-2 text-center font-mono text-red-500">{row.playerDailyPenaltyPoints?.toFixed(1) || '0.0'}</td>
                                                 <td className="p-2 text-center font-mono text-fuchsia-400">{row.playerDailyReward?.toFixed(1) || '0'}</td>

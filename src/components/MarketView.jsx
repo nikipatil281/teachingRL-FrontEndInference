@@ -51,6 +51,8 @@ const EventIcon = ({ isActive }) => {
 };
 
 const MarketView = ({ day, weather, inventory, isDayEnd, nearbyEvent, eventName, competitorPresent, competitorPrice, specialEvent }) => {
+  const hasCompetitor = Boolean(competitorPresent);
+
   return (
     <div className="bg-coffee-800 p-4 rounded-xl border border-coffee-700 shadow-xl relative overflow-hidden w-full">
       {/* Decor */}
@@ -88,26 +90,26 @@ const MarketView = ({ day, weather, inventory, isDayEnd, nearbyEvent, eventName,
         </div>
 
         {/* Competitor */}
-        <div className={`p-2 px-3 rounded-lg border flex items-start justify-between transition-colors ${(competitorPresent || specialEvent)
+        <div className={`p-2 px-3 rounded-lg border flex items-start justify-between transition-colors ${hasCompetitor
           ? 'bg-red-900/10 border-red-500/50'
-          : 'bg-emerald-900/10 border-emerald-500/20'
+          : 'bg-coffee-700/50 border-transparent'
           }`}>
           <div className="flex flex-col">
             <div className="text-[10px] uppercase tracking-wider text-coffee-400 font-bold mb-1">Competition</div>
-            <div className={`text-sm font-bold ${(competitorPresent || specialEvent) ? 'text-red-600' : 'text-emerald-500'}`}>
-              {competitorPresent ? `Competitor @ $${competitorPrice?.toFixed(2)}` : specialEvent ? 'Competitor Alert' : 'Market Clear'}
+            <div className={`text-sm font-bold ${hasCompetitor ? 'text-red-600' : 'text-coffee-400'}`}>
+              {hasCompetitor ? `Competitor @ $${competitorPrice?.toFixed(2)}` : specialEvent ? 'Competitor Absent' : 'Market Clear'}
             </div>
             <div className={`text-[10px] mt-1 text-coffee-400`}>
-              {competitorPresent
+              {hasCompetitor
                 ? <span>"BeanMean" is open</span>
-                : specialEvent
-                  ? <span className="text-red-400/80 italic line-clamp-1">{specialEvent}</span>
+                  : specialEvent
+                  ? <span className="italic line-clamp-1">{specialEvent}</span>
                   : <span>No competition</span>
               }
             </div>
           </div>
           <div className="relative">
-            <Users className={`w-8 h-8 ${(competitorPresent || specialEvent) ? 'text-red-500' : 'text-emerald-500/40'}`} />
+            <Users className={`w-8 h-8 ${hasCompetitor ? 'text-red-500' : 'text-coffee-500/60'}`} />
           </div>
         </div>
 
