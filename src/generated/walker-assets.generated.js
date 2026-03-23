@@ -106,6 +106,72 @@ const autoWalkerAssetManifest = [
       "/person8/Gemini_Generated_person8_4.png",
       "/person8/Gemini_Generated_person8_5.png"
     ]
+  },
+  {
+    "id": "person9",
+    "kind": "person",
+    "frames": [
+      "/person9/Gemini_Generated_person9_1.png",
+      "/person9/Gemini_Generated_person9_2.png",
+      "/person9/Gemini_Generated_person9_3.png",
+      "/person9/Gemini_Generated_person9_4.png",
+      "/person9/Gemini_Generated_person9_5.png"
+    ]
+  },
+  {
+    "id": "person10",
+    "kind": "person",
+    "frames": [
+      "/person10/Gemini_Generated_person10_1.png",
+      "/person10/Gemini_Generated_person10_2.png",
+      "/person10/Gemini_Generated_person10_3.png",
+      "/person10/Gemini_Generated_person10_4.png",
+      "/person10/Gemini_Generated_person10_5.png"
+    ]
+  },
+  {
+    "id": "person11",
+    "kind": "person",
+    "frames": [
+      "/person11/Gemini_Generated_person11_1.png",
+      "/person11/Gemini_Generated_person11_2.png",
+      "/person11/Gemini_Generated_person11_3.png",
+      "/person11/Gemini_Generated_person11_4.png",
+      "/person11/Gemini_Generated_person11_5.png"
+    ]
+  },
+  {
+    "id": "person12",
+    "kind": "person",
+    "frames": [
+      "/person12/Gemini_Generated_person12_1.png",
+      "/person12/Gemini_Generated_person12_2.png",
+      "/person12/Gemini_Generated_person12_3.png",
+      "/person12/Gemini_Generated_person12_4.png",
+      "/person12/Gemini_Generated_person12_5.png"
+    ]
+  },
+  {
+    "id": "person13",
+    "kind": "person",
+    "frames": [
+      "/person13/Gemini_Generated_person13_1.png",
+      "/person13/Gemini_Generated_person13_2.png",
+      "/person13/Gemini_Generated_person13_3.png",
+      "/person13/Gemini_Generated_person13_4.png",
+      "/person13/Gemini_Generated_person13_5.png"
+    ]
+  },
+  {
+    "id": "person14",
+    "kind": "person",
+    "frames": [
+      "/person14/Gemini_Generated_person14_1.png",
+      "/person14/Gemini_Generated_person14_2.png",
+      "/person14/Gemini_Generated_person14_3.png",
+      "/person14/Gemini_Generated_person14_4.png",
+      "/person14/Gemini_Generated_person14_5.png"
+    ]
   }
 ];
 
