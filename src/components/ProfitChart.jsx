@@ -101,11 +101,11 @@ const CustomTooltip = ({ active, payload, label, viewMode, showRLAgents, showMLA
                 if (rewardFocusAgent === 'player' && prefix === 'rl') return null;
                 const rewardColor = prefix === 'player' ? '#a855f7' : color;
                 return (
-                    <div className="mb-3 last:mb-0 border-b last:border-0 border-coffee-700 pb-2 last:pb-0">
-                        <div className="flex items-center justify-between gap-4 mb-1">
+                    <div className="mb-2 last:mb-0 border-b last:border-0 border-coffee-700 pb-2 last:pb-0">
+                        <div className="flex items-center justify-between gap-3 mb-1">
                             <span style={{ color: rewardColor }} className="font-bold">{prefix === 'player' ? 'Your' : `${name}'s`} Reward</span>
                         </div>
-                        <div className="grid grid-cols-1 gap-1 text-xs text-coffee-400">
+                        <div className="grid grid-cols-1 gap-1 text-[11px] text-coffee-400 leading-snug">
                             <div className="flex justify-between">
                                 <span>Reward for the day:</span>
                                 <span className="text-coffee-200">{dailyReward.toFixed(1)} Pts</span>
@@ -123,24 +123,24 @@ const CustomTooltip = ({ active, payload, label, viewMode, showRLAgents, showMLA
             if (viewMode === 'Combined' && prefix === 'rl' && hideRLLine) return null;
 
             return (
-                <div className="mb-3 last:mb-0 border-b last:border-0 border-coffee-700 pb-2 last:pb-0">
-                    <div className="flex items-center justify-between gap-4 mb-1">
+                <div className="mb-2 last:mb-0 border-b last:border-0 border-coffee-700 pb-2 last:pb-0">
+                    <div className="flex items-center justify-between gap-3 mb-1">
                         <span style={{ color }} className="font-bold">{name}</span>
                     </div>
-                    <div className="grid grid-cols-1 gap-1 text-xs text-coffee-400">
-                        <div className="flex justify-between gap-4">
+                    <div className="grid grid-cols-1 gap-1 text-[11px] text-coffee-400 leading-snug">
+                        <div className="flex justify-between gap-3">
                             <span>Cups sold:</span>
                             <span className="text-coffee-200 font-mono">{dailySales} units</span>
                         </div>
-                        <div className="flex justify-between gap-4">
+                        <div className="flex justify-between gap-3">
                             <span>Cumulative cups sold:</span>
                             <span className="text-coffee-200 font-mono">{totalSales} units</span>
                         </div>
-                        <div className="flex justify-between gap-4">
+                        <div className="flex justify-between gap-3">
                             <span>Profit:</span>
                             <span className="text-coffee-200 font-mono">${dailyProfit.toFixed(0)}</span>
                         </div>
-                        <div className="flex justify-between gap-4">
+                        <div className="flex justify-between gap-3">
                             <span>Cumulative Profit:</span>
                             <span className="text-coffee-200 font-mono">${totalProfit.toFixed(0)}</span>
                         </div>
@@ -150,8 +150,8 @@ const CustomTooltip = ({ active, payload, label, viewMode, showRLAgents, showMLA
         };
 
         return (
-            <div className="bg-coffee-800 p-3 border border-coffee-700 rounded-lg shadow-xl text-sm z-50 min-w-[240px]">
-                <p className="text-coffee-200 font-bold mb-2">{label}</p>
+            <div className="bg-coffee-800 p-2.5 border border-coffee-700 rounded-lg shadow-xl text-[12px] z-50 min-w-[210px] max-w-[220px]">
+                <p className="text-coffee-200 font-bold text-[11px] mb-2">{label}</p>
                 {renderAgentInfo('player', 'You', '#10b981')}
                 {showMLAgent && (showRLAgents || data.mlSales !== undefined) && renderAgentInfo('ml', 'ML Agent', '#1d4ed8')}
                 {showRLAgents && renderAgentInfo('rl', 'RL Agent', '#f97316')}
@@ -160,6 +160,8 @@ const CustomTooltip = ({ active, payload, label, viewMode, showRLAgents, showMLA
     }
     return null;
 };
+
+const GRAPH_TOOLTIP_POSITION = { y: -10 };
 
 const ProfitChart = ({ data, showRLAgents = true, showMLAgent = true, hideRLLine = false, enableRewardsView, hideRLRewardLine = false, enableWeeklyRlRewardsToggle = false, forcedViewMode = null, hideInternalViewToggles = false }) => {
     const [internalViewMode, setInternalViewMode] = useState('Combined'); // 'Combined' or 'Rewards' or 'RLRewards' or 'Secondary'
@@ -359,7 +361,10 @@ const ProfitChart = ({ data, showRLAgents = true, showMLAgent = true, hideRLLine
                                     strokeOpacity={0.85}
                                 />
 
-                                <Tooltip content={<CustomTooltip viewMode={viewMode} showRLAgents={showRLAgents} showMLAgent={showMLAgent} hideRLLine={hideRLLine} hideRLRewardLine={hideRLRewardLine} rewardFocusAgent={rewardFocusAgent} />} />
+                                <Tooltip
+                                    position={GRAPH_TOOLTIP_POSITION}
+                                    content={<CustomTooltip viewMode={viewMode} showRLAgents={showRLAgents} showMLAgent={showMLAgent} hideRLLine={hideRLLine} hideRLRewardLine={hideRLRewardLine} rewardFocusAgent={rewardFocusAgent} />}
+                                />
 
                                 {shouldFloatRewardXAxis && (
                                     <Scatter
@@ -446,7 +451,10 @@ const ProfitChart = ({ data, showRLAgents = true, showMLAgent = true, hideRLLine
                                 />
                                 <YAxis yAxisId="profitCumulative" hide domain={['auto', 'auto']} />
 
-                                <Tooltip content={<CustomTooltip viewMode={viewMode} showRLAgents={showRLAgents} showMLAgent={showMLAgent} hideRLLine={hideRLLine} hideRLRewardLine={hideRLRewardLine} />} />
+                                <Tooltip
+                                    position={GRAPH_TOOLTIP_POSITION}
+                                    content={<CustomTooltip viewMode={viewMode} showRLAgents={showRLAgents} showMLAgent={showMLAgent} hideRLLine={hideRLLine} hideRLRewardLine={hideRLRewardLine} />}
+                                />
 
                                 <ReferenceLine
                                     yAxisId="left"
@@ -556,39 +564,39 @@ const ProfitChart = ({ data, showRLAgents = true, showMLAgent = true, hideRLLine
                                 </div>
                             </div>
                             <table className="w-full text-left text-xs text-coffee-200 table-fixed">
-                                <thead className="sticky top-0 bg-coffee-800 z-10 border-b border-coffee-700">
-                                    <tr>
-                                        <th className="p-0 text-center">
+                                <thead>
+                                    <tr className="bg-coffee-800 border-b border-coffee-700 shadow-[0_1px_0_0_rgba(60,42,32,0.95)]">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <Calendar className="w-4 h-4 mx-auto text-coffee-400" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Day</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <Calendar className="w-4 h-4 mx-auto text-coffee-300" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Day of the Week</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <Cloud className="w-4 h-4 mx-auto text-blue-300" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Weather</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <Star className="w-4 h-4 mx-auto text-yellow-400" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Local Event</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <Store className="w-4 h-4 mx-auto text-red-400" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Competitor Present</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <img
                                                     src="/coffee-bean-sack.png"
@@ -599,37 +607,37 @@ const ProfitChart = ({ data, showRLAgents = true, showMLAgent = true, hideRLLine
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Start Inventory</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <DollarSign className="w-4 h-4 mx-auto text-emerald-400" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Price Chosen ($)</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <Coffee className="w-4 h-4 mx-auto text-amber-600" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Cups Sold</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <Coins className="w-4 h-4 mx-auto text-yellow-500" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Profit Made ($)</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <Award className="w-4 h-4 mx-auto text-purple-400" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Reward</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <AlertCircle className="w-4 h-4 mx-auto text-red-500" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Penalty</div>
                                             </div>
                                         </th>
-                                        <th className="p-0 text-center">
+                                        <th className="sticky top-0 z-20 p-0 text-center bg-coffee-800">
                                             <div className="relative group inline-block p-3 hover:bg-coffee-700/50 rounded transition-colors cursor-help">
                                                 <Award className="w-4 h-4 mx-auto text-fuchsia-400" />
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bg-coffee-900 border border-coffee-600 text-coffee-100 text-[10px] py-1.5 px-3 rounded top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none transition-opacity duration-200 z-[60] shadow-xl">Net Reward</div>

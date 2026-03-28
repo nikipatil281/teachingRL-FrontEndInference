@@ -65,6 +65,7 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
         weather: record.weather,
         event: record.nearbyEvent,
         competitor: record.competitorPresent,
+        competitorPrices: [],
         playerPrices: [],
         rlPrices: [],
         dayNames: new Set(),
@@ -75,6 +76,9 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
     policyMap[stateKey].playerPrices.push(record.playerPrice);
     if (!isTutorial && record.rlPrice) {
       policyMap[stateKey].rlPrices.push(record.rlPrice);
+    }
+    if (record.competitorPresent && Number.isFinite(record.competitorPrice)) {
+      policyMap[stateKey].competitorPrices.push(record.competitorPrice);
     }
     if (record.dayName) {
       policyMap[stateKey].dayNames.add(record.dayName);
@@ -87,6 +91,8 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
   const policyTable = Object.values(policyMap).map(state => {
     const playerMin = state.playerPrices.length > 0 ? Math.min(...state.playerPrices) : null;
     const playerMax = state.playerPrices.length > 0 ? Math.max(...state.playerPrices) : null;
+    const competitorMin = state.competitorPrices.length > 0 ? Math.min(...state.competitorPrices) : null;
+    const competitorMax = state.competitorPrices.length > 0 ? Math.max(...state.competitorPrices) : null;
 
     let rlMin = null, rlMax = null;
     if (!isTutorial && state.rlPrices.length > 0) {
@@ -105,6 +111,11 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
       groupedDays,
       inventoryRangeString: inventoryDisplay.label,
       inventoryIsApproximate: inventoryDisplay.approximate,
+      competitorRangeStr: !state.competitor
+        ? 'No'
+        : competitorMin === competitorMax
+          ? `$${competitorMin?.toFixed(2)}`
+          : `$${competitorMin?.toFixed(2)} - $${competitorMax?.toFixed(2)}`,
       playerRangeStr: playerMin === playerMax ? `$${playerMin?.toFixed(2)}` : `$${playerMin?.toFixed(2)} - $${playerMax?.toFixed(2)}`,
       rlRangeStr: rlMin === null ? "Fetching..." : (rlMin === rlMax ? `$${rlMin?.toFixed(2)}` : `$${rlMin?.toFixed(2)} - $${rlMax?.toFixed(2)}`),
       count: state.playerPrices.length
@@ -287,7 +298,9 @@ const WeeklyReportModal = ({ isOpen, weekNumber, data, onContinue, onBackToTutor
                           </td>
                           <td className="px-2.5 py-2.5 text-center">
                             {state.competitor ? (
-                              <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] font-bold">Yes</span>
+                              <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] font-bold whitespace-nowrap">
+                                {state.competitorRangeStr}
+                              </span>
                             ) : (
                               <span className="text-coffee-500 text-[10px]">No</span>
                             )}
