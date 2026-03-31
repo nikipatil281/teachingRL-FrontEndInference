@@ -113,12 +113,12 @@ src/
 ├── generated/         # Browser-ready exported trained model artifacts
 ├── logic/             # Market engine plus in-browser ML/RL inference
 └── App.jsx            # Phase routing & global state
-```
+
 
 scripts/
 ├── export_frontend_models.py  # Converts trained source models into browser bundles
 └── models/                    # Source trained models kept for re-export
-
+```
 ---
 
 *Built as an educational tool to make Reinforcement Learning approachable and intuitive — no maths degree required.*
