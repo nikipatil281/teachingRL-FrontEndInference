@@ -8,11 +8,10 @@ import PrePhaselTransition from './components/PrePhase1Transition';
 import Phase1Instructions from './components/Phase1Instructions';
 import PrePhase2Transition from './components/PrePhase2Transition';
 import BackendStatusPopup from './components/BackendStatusPopup';
-import { ML_API_BASE_URL } from './logic/MLAgent';
+import { initMLModel } from './logic/MLAgent';
 import { rlAgent } from './logic/RLAgent';
-import { pingBackendHealth } from './logic/backendHealth';
 
-const ACTIVE_BACKEND_PHASES = new Set([
+const ACTIVE_MODEL_PHASES = new Set([
   'pre-tutorial',
   'orientation-instructions',
   'tutorial',
@@ -21,7 +20,7 @@ const ACTIVE_BACKEND_PHASES = new Set([
   'simulation',
 ]);
 
-const BACKEND_STATUS_VISIBLE_PHASES = new Set([
+const MODEL_STATUS_VISIBLE_PHASES = new Set([
   'pre-simulation',
   'simulation',
 ]);
@@ -41,12 +40,12 @@ function App() {
   const [backendStatusOpen, setBackendStatusOpen] = useState(false);
   const [simulationComplete, setSimulationComplete] = useState(false);
 
-  const shouldManageBackends = useMemo(
-    () => ACTIVE_BACKEND_PHASES.has(phase) && !simulationComplete,
+  const shouldManageModels = useMemo(
+    () => ACTIVE_MODEL_PHASES.has(phase) && !simulationComplete,
     [phase, simulationComplete]
   );
   const shouldShowBackendStatusUi = useMemo(
-    () => BACKEND_STATUS_VISIBLE_PHASES.has(phase) && !simulationComplete,
+    () => MODEL_STATUS_VISIBLE_PHASES.has(phase) && !simulationComplete,
     [phase, simulationComplete]
   );
 
@@ -81,58 +80,40 @@ function App() {
   };
 
   useEffect(() => {
-    if (!shouldManageBackends) return undefined;
+    if (!shouldManageModels) return undefined;
 
     let cancelled = false;
-    let intervalId;
-
-    const refreshBackendStatus = async () => {
+    const warmupModels = async () => {
       setBackendStatus((current) => ({
         ml: current.ml.ready ? current.ml : { ready: false, state: 'warming' },
         rl: current.rl.ready ? current.rl : { ready: false, state: 'warming' },
       }));
 
-      const [mlResult, rlResult] = await Promise.all([
-        pingBackendHealth(ML_API_BASE_URL),
-        pingBackendHealth(rlAgent.baseUrl),
+      const [mlReady, rlReady] = await Promise.all([
+        initMLModel(),
+        rlAgent.init(),
       ]);
 
       if (cancelled) return;
 
       setBackendStatus({
         ml: {
-          ready: mlResult.ok,
-          state: mlResult.ok ? 'ready' : mlResult.status,
+          ready: mlReady,
+          state: mlReady ? 'ready' : 'offline',
         },
         rl: {
-          ready: rlResult.ok,
-          state: rlResult.ok ? 'ready' : rlResult.status,
+          ready: rlReady,
+          state: rlReady ? 'ready' : 'offline',
         },
       });
     };
 
-    refreshBackendStatus();
-    intervalId = window.setInterval(refreshBackendStatus, 15000);
-
-    const settleCadenceId = window.setInterval(() => {
-      const allReady = (
-        (backendStatus.ml.ready || backendStatus.ml.state === 'ready')
-        && (backendStatus.rl.ready || backendStatus.rl.state === 'ready')
-      );
-
-      window.clearInterval(intervalId);
-      intervalId = window.setInterval(
-        refreshBackendStatus,
-        allReady ? (phase === 'simulation' ? 240000 : 180000) : 15000
-      );
-    }, 5000);
+    warmupModels();
 
     return () => {
       cancelled = true;
-      window.clearInterval(intervalId);
-      window.clearInterval(settleCadenceId);
     };
-  }, [backendStatus.ml.ready, backendStatus.ml.state, backendStatus.rl.ready, backendStatus.rl.state, phase, shouldManageBackends]);
+  }, [phase, shouldManageModels]);
 
   return (
     <div className={`App ${theme}`}>
@@ -183,7 +164,7 @@ function App() {
           onToggleBackendStatus={() => setBackendStatusOpen((current) => !current)}
         />
       )}
-      {shouldManageBackends && shouldShowBackendStatusUi && (
+      {shouldManageModels && shouldShowBackendStatusUi && (
         <BackendStatusPopup
           mlState={backendStatus.ml.state}
           rlState={backendStatus.rl.state}

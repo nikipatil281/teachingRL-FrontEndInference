@@ -54,7 +54,7 @@ You can also customise the simulation by toggling which market variables are act
 - **Framer Motion** — animations & transitions
 - **Tailwind CSS** — styling
 - **Lucide React** — icons
-- **Custom RL Engine** — Q-learning agent implemented in vanilla JS (`src/logic/RLAgent.js`)
+- **Bundled browser inference** — trained ML and RL models run directly in the frontend
 - **Deployed on Vercel**
 
 ---
@@ -69,6 +69,40 @@ npm install
 npm run dev
 ```
 
+Open the local Vite URL shown in the terminal.
+
+This version is frontend-only at runtime:
+
+- No Python server is required
+- No ML or RL API needs to be started
+- The trained ML and RL models are bundled into the app and loaded in the browser
+
+## Production Build
+
+```bash
+npm run build
+npm run preview
+```
+
+## Regenerating The Bundled Models
+
+You only need Python if you want to re-export the already trained source models into fresh browser bundles.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements-export.txt
+python scripts/export_frontend_models.py
+```
+
+This regenerates:
+
+- `src/generated/mlModel.generated.json`
+- `src/generated/rlModel.generated.json`
+
+After that, run `npm run build` or `npm run dev` again.
+
 ---
 
 ## Project Structure
@@ -76,9 +110,14 @@ npm run dev
 ```
 src/
 ├── components/        # All UI components (Tutorial, Dashboard, Modals, etc.)
-├── logic/             # Market engine, RL agent, ML predictor
+├── generated/         # Browser-ready exported trained model artifacts
+├── logic/             # Market engine plus in-browser ML/RL inference
 └── App.jsx            # Phase routing & global state
 ```
+
+scripts/
+├── export_frontend_models.py  # Converts trained source models into browser bundles
+└── models/                    # Source trained models kept for re-export
 
 ---
 

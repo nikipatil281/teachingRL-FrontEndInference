@@ -234,7 +234,7 @@ const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRest
                 {rlFallbackDays > 0 && (
                     <div className="w-full mb-6 bg-red-900/20 border border-red-600/40 rounded-xl p-4">
                         <p className="text-sm text-red-200">
-                            RL backend was unavailable on {rlFallbackDays} day(s), so fallback pricing may appear in this report.
+                            RL model inference fell back to the safe default on {rlFallbackDays} day(s), so fallback pricing may appear in this report.
                         </p>
                     </div>
                 )}
@@ -356,18 +356,6 @@ const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRest
 
                     <div className="p-4 md:p-6">
                         <RLPipelineFlow theme={theme} />
-                        <p className="mt-4 text-sm leading-relaxed text-coffee-300">
-                            The RL system used here was trained using the DQN algorithm. If you want to learn more about this and other such algorithms and the basics of reinforcement learning, you can visit this{' '}
-                            <a
-                                href="https://www.lesswrong.com/posts/kyvCNgx9oAwJCuevo/deep-q-networks-explained"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="font-semibold text-amber-400 underline decoration-amber-400/60 underline-offset-4 transition-colors hover:text-amber-300"
-                            >
-                                link
-                            </a>
-                            .
-                        </p>
                     </div>
                 </div>
 

@@ -20,11 +20,16 @@ import {
     Package,
     PartyPopper,
     RefreshCw,
+    Search,
     ShieldAlert,
     Store,
     TrendingUp,
 } from 'lucide-react';
 import '@xyflow/react/dist/style.css';
+
+const LENS_SIZE = 220;
+const LENS_ZOOM = 1.85;
+const FLOW_FIT_VIEW_OPTIONS = { padding: 0.1, maxZoom: 0.95 };
 
 const TONE_STYLES = {
     amber: {
@@ -995,6 +1000,57 @@ const RLPipelineFlow = ({ theme }) => {
     const isLight = theme === 'theme-latte';
     const [activeKey, setActiveKey] = useState(null);
     const [pinnedKey, setPinnedKey] = useState(null);
+    const [isLensEnabled, setIsLensEnabled] = useState(false);
+    const [isLensVisible, setIsLensVisible] = useState(false);
+    const [lensPosition, setLensPosition] = useState({ x: LENS_SIZE / 2, y: LENS_SIZE / 2 });
+    const [surfaceSize, setSurfaceSize] = useState({ width: 0, height: 0 });
+    const [viewport, setViewport] = useState(null);
+    const surfaceRef = useRef(null);
+
+    useEffect(() => {
+        if (!surfaceRef.current) return undefined;
+
+        const observer = new ResizeObserver(([entry]) => {
+            const nextWidth = entry.contentRect.width;
+            const nextHeight = entry.contentRect.height;
+            setSurfaceSize({ width: nextWidth, height: nextHeight });
+        });
+
+        observer.observe(surfaceRef.current);
+
+        return () => observer.disconnect();
+    }, []);
+
+    const updateLensPosition = (event) => {
+        if (!surfaceRef.current) return;
+
+        const bounds = surfaceRef.current.getBoundingClientRect();
+        const nextX = Math.min(bounds.width, Math.max(0, event.clientX - bounds.left));
+        const nextY = Math.min(bounds.height, Math.max(0, event.clientY - bounds.top));
+
+        setLensPosition({ x: nextX, y: nextY });
+    };
+
+    const handleLensPointerEnter = (event) => {
+        if (!isLensEnabled) return;
+        updateLensPosition(event);
+        setIsLensVisible(true);
+    };
+
+    const handleLensPointerMove = (event) => {
+        if (!isLensEnabled) return;
+        updateLensPosition(event);
+        if (!isLensVisible) {
+            setIsLensVisible(true);
+        }
+    };
+
+    const handleLensPointerLeave = () => {
+        setIsLensVisible(false);
+    };
+
+    const lensTranslateX = (LENS_SIZE / 2) - (lensPosition.x * LENS_ZOOM);
+    const lensTranslateY = (LENS_SIZE / 2) - (lensPosition.y * LENS_ZOOM);
 
     return (
         <PipelineThemeContext.Provider value={{ isLight }}>
@@ -1002,19 +1058,60 @@ const RLPipelineFlow = ({ theme }) => {
                 <div className="w-full">
                     <MobileFlow />
 
-                    <div className={`rl-pipeline-surface rl-pipeline-flow relative hidden h-[750px] w-full overflow-hidden rounded-[28px] border md:block ${isLight ? 'border-coffee-500/45' : 'border-coffee-700/60'}`}>
+                    <div
+                        ref={surfaceRef}
+                        className={`rl-pipeline-surface rl-pipeline-flow relative hidden h-[750px] w-full overflow-hidden rounded-[28px] border md:block ${isLight ? 'border-coffee-500/45' : 'border-coffee-700/60'} ${isLensEnabled ? 'cursor-none' : ''}`}
+                        onPointerEnter={handleLensPointerEnter}
+                        onPointerMove={handleLensPointerMove}
+                        onPointerLeave={handleLensPointerLeave}
+                    >
+                        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-28 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
+                        <div className="absolute right-4 top-4 z-30">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsLensEnabled((current) => {
+                                        const next = !current;
+                                        if (!next) {
+                                            setIsLensVisible(false);
+                                        }
+                                        return next;
+                                    });
+                                }}
+                                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-black uppercase tracking-[0.18em] shadow-xl transition-all ${isLensEnabled
+                                    ? 'border-amber-300/60 bg-amber-400/20 text-amber-50'
+                                    : isLight
+                                        ? 'border-coffee-500/40 bg-white/85 text-coffee-950 hover:border-amber-500/55 hover:text-amber-900'
+                                        : 'border-coffee-600/60 bg-coffee-950/80 text-coffee-100 hover:border-amber-400/50 hover:text-amber-200'
+                                    }`}
+                                data-lens-toggle="true"
+                            >
+                                <Search className="h-4 w-4" />
+                                {isLensEnabled ? 'Lens On' : 'Lens Off'}
+                            </button>
+                        </div>
+
                         <ReactFlow
                             nodes={DESKTOP_NODES}
                             edges={DESKTOP_EDGES}
                             nodeTypes={nodeTypes}
                             edgeTypes={edgeTypes}
                             fitView
-                            fitViewOptions={{ padding: 0.1, maxZoom: 0.95 }}
+                            fitViewOptions={FLOW_FIT_VIEW_OPTIONS}
                             nodesDraggable={false}
                             nodesConnectable={false}
                             elementsSelectable={false}
                             preventScrolling={false}
-                            zoomOnDoubleClick={false}
+                            zoomOnDoubleClick={!isLensEnabled}
+                            zoomOnScroll={!isLensEnabled}
+                            zoomOnPinch={!isLensEnabled}
+                            panOnDrag={!isLensEnabled}
+                            onInit={(instance) => {
+                                window.requestAnimationFrame(() => {
+                                    setViewport(instance.getViewport());
+                                });
+                            }}
+                            onViewportChange={setViewport}
                             colorMode={isLight ? 'light' : 'dark'}
                             className="h-full w-full bg-transparent"
                             style={{ width: '100%', height: '100%' }}
@@ -1023,6 +1120,59 @@ const RLPipelineFlow = ({ theme }) => {
                             <Background gap={120} size={1.2} color={isLight ? 'rgba(62,39,35,0.12)' : 'rgba(255,255,255,0.08)'} />
                             <Controls className="rl-pipeline-controls" />
                         </ReactFlow>
+
+                        {isLensEnabled && isLensVisible && viewport && surfaceSize.width > 0 && surfaceSize.height > 0 ? (
+                            <div
+                                className="pointer-events-none absolute z-40 overflow-hidden rounded-full border border-amber-200/70 shadow-[0_22px_55px_rgba(15,23,42,0.38)]"
+                                style={{
+                                    width: LENS_SIZE,
+                                    height: LENS_SIZE,
+                                    left: lensPosition.x - (LENS_SIZE / 2),
+                                    top: lensPosition.y - (LENS_SIZE / 2),
+                                    background: isLight
+                                        ? 'radial-gradient(circle at 35% 35%, rgba(255,255,255,0.72), rgba(255,248,235,0.18) 58%, rgba(120,53,15,0.18) 100%)'
+                                        : 'radial-gradient(circle at 35% 35%, rgba(255,255,255,0.18), rgba(12,10,9,0.16) 58%, rgba(0,0,0,0.4) 100%)',
+                                    backdropFilter: 'blur(1px)',
+                                }}
+                            >
+                                <div
+                                    className="absolute left-0 top-0 overflow-hidden"
+                                    style={{
+                                        width: surfaceSize.width,
+                                        height: surfaceSize.height,
+                                        transform: `translate(${lensTranslateX}px, ${lensTranslateY}px) scale(${LENS_ZOOM})`,
+                                        transformOrigin: 'top left',
+                                    }}
+                                >
+                                    <ReactFlow
+                                        nodes={DESKTOP_NODES}
+                                        edges={DESKTOP_EDGES}
+                                        nodeTypes={nodeTypes}
+                                        edgeTypes={edgeTypes}
+                                        viewport={viewport}
+                                        onViewportChange={setViewport}
+                                        nodesDraggable={false}
+                                        nodesConnectable={false}
+                                        elementsSelectable={false}
+                                        preventScrolling
+                                        zoomOnScroll={false}
+                                        zoomOnPinch={false}
+                                        zoomOnDoubleClick={false}
+                                        panOnDrag={false}
+                                        colorMode={isLight ? 'light' : 'dark'}
+                                        className="h-full w-full bg-transparent"
+                                        style={{ width: surfaceSize.width, height: surfaceSize.height }}
+                                    >
+                                        <Background gap={24} size={1} color={isLight ? 'rgba(62,39,35,0.08)' : 'rgba(255,255,255,0.05)'} />
+                                        <Background gap={120} size={1.2} color={isLight ? 'rgba(62,39,35,0.12)' : 'rgba(255,255,255,0.08)'} />
+                                    </ReactFlow>
+                                </div>
+
+                                <div className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-white/65 ring-offset-2 ring-offset-transparent" />
+                                <div className="pointer-events-none absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-100/75 bg-white/10 shadow-[0_0_0_1px_rgba(255,255,255,0.18)]" />
+                                <div className="pointer-events-none absolute left-[52%] top-[84%] h-14 w-3 -translate-x-1/2 -translate-y-1/2 rotate-[-38deg] rounded-full bg-amber-100/80 shadow-[0_6px_12px_rgba(0,0,0,0.18)]" />
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             </SharedDetailContext.Provider>

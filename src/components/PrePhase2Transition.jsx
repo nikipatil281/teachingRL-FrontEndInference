@@ -122,7 +122,7 @@ const PrePhase2Transition = ({
                         Welcome to the 28-day challenge. It's time to refine your pricing strategies alongside an Machine Learning (ML) advisor!
                     </p>
                     <p className="mt-3 text-sm md:text-base text-coffee-400 font-medium max-w-3xl mx-auto">
-                        While you review this page, the app is quietly waking the ML advisor and RL benchmark in the background so both are ready once the 28-day simulation starts.
+                        While you review this page, the app is quietly loading the bundled ML advisor and RL benchmark so both are ready once the 28-day simulation starts.
                     </p>
                 </div>
 

@@ -217,32 +217,42 @@ const Dashboard = ({
   const memoryData = getMemoryRecall();
 
   const updateSuggestions = useEffectEvent(async () => {
-    if (!mlReady) return;
-
     const currentDayName = conditions.day || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][(day - 1) % 7];
 
-    // Async ML prediction
-    const mlP = await getMLPrice(
-      currentDayName,
-      conditions.weather,
-      conditions.nearbyEvent,
-      mlInventory,
-      conditions.competitorPresent,
-      conditions.competitorPrice || 0
-    );
-    setMLSuggestion(toGamePrice(mlP));
+    const tasks = [];
 
-    // RL prediction (using backend logic)
-    const rlResult = await rlAgent.getAction(
-      { ...conditions, dayNumber: day, inventory: rlInventory },
-      history[history.length - 1]?.rlPrice || 4.50
-    );
-    if (rlResult && rlResult.price !== undefined) {
-      setRLSuggestion({
-        ...rlResult,
-        price: toGamePrice(rlResult.price)
-      });
+    if (mlReady) {
+      tasks.push(
+        getMLPrice(
+          currentDayName,
+          conditions.weather,
+          conditions.nearbyEvent,
+          mlInventory,
+          conditions.competitorPresent,
+          conditions.competitorPrice || 0
+        ).then((mlP) => {
+          setMLSuggestion(toGamePrice(mlP));
+        })
+      );
     }
+
+    if (rlReady) {
+      tasks.push(
+        rlAgent.getAction(
+          { ...conditions, dayNumber: day, inventory: rlInventory },
+          history[history.length - 1]?.rlPrice || 4.50
+        ).then((rlResult) => {
+          if (rlResult && rlResult.price !== undefined) {
+            setRLSuggestion({
+              ...rlResult,
+              price: toGamePrice(rlResult.price)
+            });
+          }
+        })
+      );
+    }
+
+    await Promise.all(tasks);
   });
 
   // 2. Update Suggestions when conditions change
@@ -773,7 +783,7 @@ const Dashboard = ({
             </div>
             {!rlReady && (
               <div className="text-[10px] font-semibold text-red-400">
-                RL service is waking up - fallback price $5.00 is temporarily in use
+                RL model bundle is still loading. A safe fallback price is temporarily in use.
               </div>
             )}
           </div>
@@ -924,10 +934,10 @@ const Dashboard = ({
                       </span>
                     </div>
                     <div className="mt-2 text-[10px] text-coffee-400/80 leading-tight relative z-10">
-                      {mlReady ? "Sequential RandomForest model price prediction." : "Waiting for ML backend..."}
+                      {mlReady ? "Sequential Random Forest prediction from the bundled trained model." : "Loading the bundled ML model..."}
                     </div>
                     <div className="mt-1 text-[9px] leading-tight text-coffee-400/70 relative z-10">
-                      If this box looks greyed out ALL THE TIME instead of amber, the ML and RL server may not be ready yet. Check the top-right Server Status button.
+                      If this box stays greyed out, the local model bundle may still be loading. Check the top-right Model Status button.
                     </div>
                   </div>
 
