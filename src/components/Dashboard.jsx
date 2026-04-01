@@ -13,7 +13,6 @@ import WeatherEffects from "./WeatherEffects";
 import EmergencyRestockModal from "./EmergencyRestockModal";
 import PolicyReviewPage from "./PolicyReviewPage";
 import PolicyQuizPage from "./PolicyQuizPage";
-import MeetCreatorsPage from "./MeetCreatorsPage";
 import { BackendStatusButton } from "./BackendStatusPopup";
 
 import {
@@ -162,7 +161,6 @@ const Dashboard = ({
   const [pendingWeeklyStats, setPendingWeeklyStats] = useState(null);
   const [showPolicyPage, setShowPolicyPage] = useState(false);
   const [showPolicyQuizPage, setShowPolicyQuizPage] = useState(false);
-  const [showCreatorsPage, setShowCreatorsPage] = useState(false);
   const [policyQuizState, setPolicyQuizState] = useState(createInitialPolicyQuizState);
   const [pendingLeaveAction, setPendingLeaveAction] = useState(null);
   const [useCompactDashboardLayout, setUseCompactDashboardLayout] = useState(() => {
@@ -644,28 +642,6 @@ const Dashboard = ({
     return () => window.removeEventListener("resize", updateDashboardViewport);
   }, []);
 
-  if (showCreatorsPage) {
-    return (
-      <>
-        <MeetCreatorsPage
-          theme={theme}
-          toggleTheme={toggleTheme}
-          onBackToQuiz={() => setShowCreatorsPage(false)}
-          onRestart={handleRestart}
-          onExitToLogin={handleExitSession}
-        />
-        <AnimatePresence>
-          <SessionLeaveConfirmModal
-            isOpen={pendingLeaveAction !== null}
-            actionLabel={pendingLeaveAction === "restart" ? "run it again" : "leave"}
-            onCancel={() => setPendingLeaveAction(null)}
-            onConfirm={handleConfirmLeave}
-          />
-        </AnimatePresence>
-      </>
-    );
-  }
-
   if (showPolicyQuizPage) {
     return (
       <>
@@ -673,10 +649,8 @@ const Dashboard = ({
           theme={theme}
           toggleTheme={toggleTheme}
           onBackToPolicyReview={() => {
-            setShowCreatorsPage(false);
             setShowPolicyQuizPage(false);
           }}
-          onMeetCreators={() => setShowCreatorsPage(true)}
           onRestart={handleRestart}
           onExitToLogin={handleExitSession}
           quizState={policyQuizState}
@@ -702,7 +676,6 @@ const Dashboard = ({
           shopName={shopName}
           onBackToDebrief={() => setShowPolicyPage(false)}
           onGoToQuiz={() => {
-            setShowCreatorsPage(false);
             setShowPolicyQuizPage(true);
           }}
           theme={theme}

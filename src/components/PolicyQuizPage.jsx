@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, ClipboardCheck, Sun, Moon, CheckCircle2, LogOut, PlusCircle, Trash2, XCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, Sun, Moon, CheckCircle2, LogOut, PlusCircle, Trash2, XCircle, RotateCcw } from 'lucide-react';
 import { rlAgent } from '../logic/RLAgent';
 
 const POLICY_QUESTIONS = [
@@ -189,7 +189,6 @@ const PolicyQuizPage = ({
   theme,
   toggleTheme,
   onBackToPolicyReview,
-  onMeetCreators,
   onRestart,
   onExitToLogin,
   quizState,
@@ -631,19 +630,6 @@ const PolicyQuizPage = ({
             </motion.button>
 
             <div className={`flex flex-col gap-3 md:flex-row md:items-center ${submitted ? '' : 'md:ml-auto'}`}>
-              {submitted && (
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.05, x: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={onMeetCreators}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-coffee-950 font-semibold transition-colors shadow-lg shadow-amber-900/20"
-                >
-                  Meet the Creators
-                  <ArrowRight className="w-4 h-4" />
-                </motion.button>
-              )}
-
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.05 }}
