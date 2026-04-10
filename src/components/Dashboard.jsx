@@ -13,7 +13,6 @@ import WeatherEffects from "./WeatherEffects";
 import EmergencyRestockModal from "./EmergencyRestockModal";
 import PolicyReviewPage from "./PolicyReviewPage";
 import PolicyQuizPage from "./PolicyQuizPage";
-import { BackendStatusButton } from "./BackendStatusPopup";
 
 import {
   initMainGameSchedule,
@@ -26,8 +25,7 @@ import {
   getNormalizedPrice,
   WEEKLY_START_INVENTORY
 } from "../logic/MarketEngine";
-import { getMLPrice } from "../logic/MLAgent";
-import { rlAgent } from "../logic/RLAgent";
+import { getCsvPriceSuggestion } from "../logic/PriceSuggestionLookup";
 
 const createInitialPolicyQuizState = () => ({
   answers: {},
@@ -100,7 +98,6 @@ const Dashboard = ({
   userAvatar = 'Leo',
   backendStatus,
   onSimulationComplete,
-  onToggleBackendStatus,
 }) => {
   const DEFAULT_PLAYER_PRICE = 1;
 
@@ -217,40 +214,32 @@ const Dashboard = ({
   const updateSuggestions = useEffectEvent(async () => {
     const currentDayName = conditions.day || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][(day - 1) % 7];
 
-    const tasks = [];
+    if (!mlReady || !rlReady) return;
 
-    if (mlReady) {
-      tasks.push(
-        getMLPrice(
-          currentDayName,
-          conditions.weather,
-          conditions.nearbyEvent,
-          mlInventory,
-          conditions.competitorPresent,
-          conditions.competitorPrice || 0
-        ).then((mlP) => {
-          setMLSuggestion(toGamePrice(mlP));
-        })
-      );
+    const suggestion = await getCsvPriceSuggestion({
+      day: currentDayName,
+      weather: conditions.weather,
+      nearbyEvent: conditions.nearbyEvent,
+      competitorPresent: conditions.competitorPresent,
+      competitorPrice: conditions.competitorPrice || 0
+    });
+
+    if (!suggestion) {
+      setMLSuggestion(5);
+      setRLSuggestion({
+        price: 5,
+        action: "price_$5.00",
+        isExploring: false,
+      });
+      return;
     }
 
-    if (rlReady) {
-      tasks.push(
-        rlAgent.getAction(
-          { ...conditions, dayNumber: day, inventory: rlInventory },
-          history[history.length - 1]?.rlPrice || 4.50
-        ).then((rlResult) => {
-          if (rlResult && rlResult.price !== undefined) {
-            setRLSuggestion({
-              ...rlResult,
-              price: toGamePrice(rlResult.price)
-            });
-          }
-        })
-      );
-    }
-
-    await Promise.all(tasks);
+    setMLSuggestion(toGamePrice(suggestion.mlPrice));
+    setRLSuggestion({
+      price: toGamePrice(suggestion.rlPrice),
+      action: `price_$${toGamePrice(suggestion.rlPrice).toFixed(2)}`,
+      isExploring: false,
+    });
   });
 
   // 2. Update Suggestions when conditions change
@@ -450,7 +439,6 @@ const Dashboard = ({
       // Price and state trace
       rlDemand,
       rlPrice: normalizedRlPrice,
-      rlSource: rlSuggestion.state || "unknown",
       mlPrice: normalizedMlPrice,
       playerPrice: normalizedPlayerPrice,
       weather: mappedWeatherStr,
@@ -722,11 +710,6 @@ const Dashboard = ({
           </p>
         </div>
         <div className="flex items-center gap-4 md:gap-8 justify-end w-full md:w-auto">
-          <BackendStatusButton
-            mlState={backendStatus?.ml?.state ?? "idle"}
-            rlState={backendStatus?.rl?.state ?? "idle"}
-            onOpen={onToggleBackendStatus}
-          />
           <button
             onClick={toggleTheme}
             className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-coffee-700 bg-coffee-800 hover:bg-coffee-700 transition-colors text-xs font-bold shadow-md"
@@ -756,7 +739,7 @@ const Dashboard = ({
             </div>
             {!rlReady && (
               <div className="text-[10px] font-semibold text-red-400">
-                RL model bundle is still loading. A safe fallback price is temporarily in use.
+                Advisor suggestions are still loading. A safe fallback price is temporarily in use.
               </div>
             )}
           </div>
@@ -887,7 +870,7 @@ const Dashboard = ({
                 {/* Top Row: Chart (moved from below so it sits at the top of the right column!) */}
                 {/* Wait, user asked to separate ML box and insight box. Let's arrange them side by side. */}
                 <div className={`flex gap-4 min-w-0 ${useCompactDashboardLayout ? 'flex-col' : 'flex-row h-[180px]'}`}>
-                   {/* Insight 1: ML Suggestion (Sequential RF) */}
+                   {/* Insight 1: ML Suggestion */}
                   <div className={`${useCompactDashboardLayout ? 'min-h-[180px]' : 'min-w-0 flex-[42]'} p-4 bg-coffee-800/80 rounded-xl shadow-2xl border ${mlReady ? 'border-amber-500/50' : 'border-coffee-700 opacity-50'} flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${mutedPanelClass}`}>
                     <div className={`absolute inset-0 ${mlReady ? 'bg-amber-500/5' : 'bg-blue-900/5'} mix-blend-overlay pointer-events-none`} />
                     <div className="absolute top-3 right-3 z-10 w-11 h-11">
@@ -907,10 +890,7 @@ const Dashboard = ({
                       </span>
                     </div>
                     <div className="mt-2 text-[10px] text-coffee-400/80 leading-tight relative z-10">
-                      {mlReady ? "Sequential Random Forest prediction from the bundled trained model." : "Loading the bundled ML model..."}
-                    </div>
-                    <div className="mt-1 text-[9px] leading-tight text-coffee-400/70 relative z-10">
-                      If this box stays greyed out, the local model bundle may still be loading. Check the top-right Model Status button.
+                      {mlReady ? "Advisor suggestion for the current market state." : "Loading advisor suggestion..."}
                     </div>
                   </div>
 

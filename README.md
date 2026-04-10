@@ -1,7 +1,5 @@
 # ☕ TeachingRL — Learn Reinforcement Learning Through a Coffee Shop
 
-> **Live Demo:** [teaching-rl.vercel.app](https://teaching-rl.vercel.app)
-
 ---
 
 ## What is this?
@@ -75,7 +73,7 @@ This version is frontend-only at runtime:
 
 - No Python server is required
 - No ML or RL API needs to be started
-- The trained ML and RL models are bundled into the app and loaded in the browser
+- ML and RL price suggestions are read from `public/valid_state_price_suggestions.csv`
 
 ## Production Build
 
@@ -84,40 +82,14 @@ npm run build
 npm run preview
 ```
 
-## Regenerating The Bundled Models
-
-You only need Python if you want to re-export the already trained source models into fresh browser bundles.
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements-export.txt
-python scripts/export_frontend_models.py
-```
-
-This regenerates:
-
-- `src/generated/mlModel.generated.json`
-- `src/generated/rlModel.generated.json`
-
-After that, run `npm run build` or `npm run dev` again.
-
----
-
 ## Project Structure
 
 ```
 src/
 ├── components/        # All UI components (Tutorial, Dashboard, Modals, etc.)
-├── generated/         # Browser-ready exported trained model artifacts
-├── logic/             # Market engine plus in-browser ML/RL inference
+├── generated/         # Browser-ready generated visual asset manifests
+├── logic/             # Market engine plus CSV-backed price suggestion lookup
 └── App.jsx            # Phase routing & global state
-
-
-scripts/
-├── export_frontend_models.py  # Converts trained source models into browser bundles
-└── models/                    # Source trained models kept for re-export
 ```
 ---
 

@@ -7,9 +7,7 @@ import TransitionPhase from './components/TransitionPhase';
 import PrePhaselTransition from './components/PrePhase1Transition';
 import Phase1Instructions from './components/Phase1Instructions';
 import PrePhase2Transition from './components/PrePhase2Transition';
-import BackendStatusPopup from './components/BackendStatusPopup';
-import { initMLModel } from './logic/MLAgent';
-import { rlAgent } from './logic/RLAgent';
+import { initPriceSuggestionLookup } from './logic/PriceSuggestionLookup';
 
 const ACTIVE_MODEL_PHASES = new Set([
   'pre-tutorial',
@@ -17,11 +15,6 @@ const ACTIVE_MODEL_PHASES = new Set([
   'tutorial',
   'pre-simulation',
   'transition',
-  'simulation',
-]);
-
-const MODEL_STATUS_VISIBLE_PHASES = new Set([
-  'pre-simulation',
   'simulation',
 ]);
 
@@ -37,15 +30,10 @@ function App() {
   const [userName, setUserName] = useState('');
   const [userAvatar, setUserAvatar] = useState('Leo');
   const [backendStatus, setBackendStatus] = useState(initialBackendState);
-  const [backendStatusOpen, setBackendStatusOpen] = useState(false);
   const [simulationComplete, setSimulationComplete] = useState(false);
 
   const shouldManageModels = useMemo(
     () => ACTIVE_MODEL_PHASES.has(phase) && !simulationComplete,
-    [phase, simulationComplete]
-  );
-  const shouldShowBackendStatusUi = useMemo(
-    () => MODEL_STATUS_VISIBLE_PHASES.has(phase) && !simulationComplete,
     [phase, simulationComplete]
   );
 
@@ -60,12 +48,10 @@ function App() {
     if (uName && uName.trim()) {
       setUserName(uName.trim());
     }
-    setBackendStatusOpen(false);
     setPhase('landing');
   };
 
   const handleRestart = () => {
-    setBackendStatusOpen(false);
     setSimulationComplete(false);
     setPhase('pre-simulation');
   };
@@ -74,7 +60,6 @@ function App() {
     setShopName('You');
     setUserName('');
     setUserAvatar('Leo');
-    setBackendStatusOpen(false);
     setSimulationComplete(false);
     setPhase('login');
   };
@@ -89,21 +74,18 @@ function App() {
         rl: current.rl.ready ? current.rl : { ready: false, state: 'warming' },
       }));
 
-      const [mlReady, rlReady] = await Promise.all([
-        initMLModel(),
-        rlAgent.init(),
-      ]);
+      const suggestionsReady = await initPriceSuggestionLookup();
 
       if (cancelled) return;
 
       setBackendStatus({
         ml: {
-          ready: mlReady,
-          state: mlReady ? 'ready' : 'offline',
+          ready: suggestionsReady,
+          state: suggestionsReady ? 'ready' : 'offline',
         },
         rl: {
-          ready: rlReady,
-          state: rlReady ? 'ready' : 'offline',
+          ready: suggestionsReady,
+          state: suggestionsReady ? 'ready' : 'offline',
         },
       });
     };
@@ -135,13 +117,10 @@ function App() {
       {phase === 'pre-simulation' && (
         <PrePhase2Transition
           onComplete={() => {
-            setBackendStatusOpen(false);
             setPhase('transition');
           }}
           theme={theme}
           toggleTheme={toggleTheme}
-          backendStatus={backendStatus}
-          onToggleBackendStatus={() => setBackendStatusOpen((current) => !current)}
         />
       )}
       {phase === 'transition' && (
@@ -161,16 +140,6 @@ function App() {
           onExitToLogin={handleExitToLogin}
           backendStatus={backendStatus}
           onSimulationComplete={() => setSimulationComplete(true)}
-          onToggleBackendStatus={() => setBackendStatusOpen((current) => !current)}
-        />
-      )}
-      {shouldManageModels && shouldShowBackendStatusUi && (
-        <BackendStatusPopup
-          mlState={backendStatus.ml.state}
-          rlState={backendStatus.rl.state}
-          isOpen={backendStatusOpen}
-          onClose={() => setBackendStatusOpen(false)}
-          phase={phase}
         />
       )}
     </div>

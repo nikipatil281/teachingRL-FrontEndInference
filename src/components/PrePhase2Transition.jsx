@@ -1,21 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { ChevronRight, Target, Info, Cpu, TrendingUp, Zap, Server, Shield, Check, X, CloudSun, Star, Store, Sun, Moon } from 'lucide-react';
-import { BackendStatusButton } from './BackendStatusPopup';
 
 const PrePhase2Transition = ({
     onComplete,
     theme,
     toggleTheme,
-    backendStatus,
-    onToggleBackendStatus,
 }) => {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const controls = useAnimation();
     const [containerWidth, setContainerWidth] = useState(0);
     const sliderRef = React.useRef(null);
-    const mlState = backendStatus?.ml?.state ?? 'idle';
-    const rlState = backendStatus?.rl?.state ?? 'idle';
 
     useEffect(() => {
         const updateWidth = () => {
@@ -79,11 +74,6 @@ const PrePhase2Transition = ({
         <div className={`h-screen bg-coffee-900 text-coffee-100 flex flex-col items-center p-2 md:p-8 relative overflow-y-auto transition-colors duration-500 ${theme}`}>
 
             <div className="absolute right-4 top-4 z-20 flex items-center gap-3 md:right-8 md:top-8">
-                <BackendStatusButton
-                    mlState={mlState}
-                    rlState={rlState}
-                    onOpen={onToggleBackendStatus}
-                />
                 <button
                     type="button"
                     onClick={toggleTheme}
@@ -122,7 +112,7 @@ const PrePhase2Transition = ({
                         Welcome to the 28-day challenge. It's time to refine your pricing strategies alongside an Machine Learning (ML) advisor!
                     </p>
                     <p className="mt-3 text-sm md:text-base text-coffee-400 font-medium max-w-3xl mx-auto">
-                        While you review this page, the app is quietly loading the bundled ML advisor and RL benchmark so both are ready once the 28-day simulation starts.
+                        While you review this page, the app is quietly preparing the ML advisor and RL benchmark so both are ready once the 28-day simulation starts.
                     </p>
                 </div>
 

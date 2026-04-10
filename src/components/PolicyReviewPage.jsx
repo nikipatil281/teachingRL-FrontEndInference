@@ -13,10 +13,6 @@ const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRest
 
     if (!history || history.length < 2) return null;
 
-    const rlFallbackDays = history.filter(
-        (h) => h.day !== 'Start' && h.rlSource === 'fallback'
-    ).length;
-
     const handleExportPDF = async () => {
         if (!reportRef.current) return;
         setIsExporting(true);
@@ -88,6 +84,7 @@ const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRest
                 weather: record.weather,
                 event: record.nearbyEvent,
                 competitor: record.competitorPresent,
+                competitorPrices: [],
                 prices: [],
                 rlPrices: [],
                 dayCounts: {},
@@ -97,6 +94,9 @@ const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRest
 
         if (record.playerPrice) {
             playerPolicyMap[stateKey].prices.push(record.playerPrice);
+        }
+        if (record.competitorPresent && Number.isFinite(record.competitorPrice)) {
+            playerPolicyMap[stateKey].competitorPrices.push(record.competitorPrice);
         }
         if (record.rlPrice) {
             playerPolicyMap[stateKey].rlPrices.push(record.rlPrice);
@@ -115,6 +115,8 @@ const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRest
         const maxPrice = state.prices.length > 0 ? Math.max(...state.prices) : null;
         const rlMinPrice = state.rlPrices.length > 0 ? Math.min(...state.rlPrices) : null;
         const rlMaxPrice = state.rlPrices.length > 0 ? Math.max(...state.rlPrices) : null;
+        const competitorMin = state.competitorPrices.length > 0 ? Math.min(...state.competitorPrices) : null;
+        const competitorMax = state.competitorPrices.length > 0 ? Math.max(...state.competitorPrices) : null;
 
         const groupedDays = Object.entries(state.dayCounts)
             .sort((a, b) => WEEKDAY_ORDER.indexOf(a[0]) - WEEKDAY_ORDER.indexOf(b[0]));
@@ -143,6 +145,11 @@ const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRest
                 : minInventory === maxInventory
                     ? `${minInventory}`
                     : `${minInventory} - ${maxInventory}`,
+            competitorRangeStr: !state.competitor
+                ? 'No'
+                : competitorMin === competitorMax
+                    ? `$${competitorMin?.toFixed(2)}`
+                    : `$${competitorMin?.toFixed(2)} - $${competitorMax?.toFixed(2)}`,
             minPrice,
             maxPrice,
             rlRangeString: rlMinPrice === null
@@ -231,14 +238,6 @@ const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRest
                     <h2 className="text-3xl font-bold text-coffee-100">Reinforcement Learning Optimal Policy Review</h2>
                 </div>
 
-                {rlFallbackDays > 0 && (
-                    <div className="w-full mb-6 bg-red-900/20 border border-red-600/40 rounded-xl p-4">
-                        <p className="text-sm text-red-200">
-                            RL model inference fell back to the safe default on {rlFallbackDays} day(s), so fallback pricing may appear in this report.
-                        </p>
-                    </div>
-                )}
-
                 {/* Player Policy Summary Table */}
                 <div className="w-full flex-1 flex flex-col mb-4 bg-coffee-800 border border-coffee-700 rounded-xl overflow-hidden">
                     <div className="p-4 bg-coffee-900/50 border-b border-coffee-700">
@@ -310,7 +309,9 @@ const PolicyReviewPage = ({ history, theme, toggleTheme, onBackToDebrief, onRest
                                             </td>
                                             <td className="px-3 py-2.5 text-center">
                                                 {state.competitor ? (
-                                                    <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold">Yes</span>
+                                                    <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold whitespace-nowrap">
+                                                        {state.competitorRangeStr}
+                                                    </span>
                                                 ) : (
                                                     <span className="text-coffee-500 text-xs">No</span>
                                                 )}

@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ClipboardCheck, Sun, Moon, CheckCircle2, LogOut, PlusCircle, Trash2, XCircle, RotateCcw } from 'lucide-react';
-import { rlAgent } from '../logic/RLAgent';
 
 const POLICY_QUESTIONS = [
   {
@@ -143,11 +142,43 @@ const formatPriceRange = (minPrice, maxPrice) => {
   return `$${Number(minPrice).toFixed(2)} to $${Number(maxPrice).toFixed(2)}`;
 };
 
+const getPolicyRange = (conditions) => {
+  let minPrice = 3;
+  let maxPrice = 7;
+
+  if (conditions.weather === 'Rainy') {
+    minPrice = 2;
+    maxPrice = 5;
+  } else if (conditions.weather === 'Cloudy') {
+    minPrice = 3;
+    maxPrice = 6;
+  } else if (conditions.weather === 'Sunny') {
+    minPrice = 4;
+    maxPrice = 8;
+  }
+
+  if (conditions.nearbyEvent) {
+    minPrice += 1;
+    maxPrice += 1;
+  }
+
+  if (conditions.competitorPresent && conditions.competitorPrice) {
+    if (conditions.competitorPrice < minPrice + 1) {
+      minPrice = Math.max(1, Math.round(conditions.competitorPrice - 1));
+    }
+  }
+
+  return {
+    minPrice: Math.max(1, Math.min(10, Math.round(minPrice))),
+    maxPrice: Math.max(1, Math.min(10, Math.round(maxPrice))),
+  };
+};
+
 const getScenarioEvaluation = (scenario) => {
   const competitorPresent = scenario.competitor === 'present';
   const competitorPrice = competitorPresent ? Number(scenario.competitorPrice) : null;
   const optimalPrice = Number(scenario.optimalPrice);
-  const policyRange = rlAgent.getOptimalRange({
+  const policyRange = getPolicyRange({
     day: scenario.day,
     weather: scenario.weather,
     nearbyEvent: scenario.traffic === 'high due to a nearby event',

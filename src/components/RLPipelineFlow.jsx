@@ -400,6 +400,7 @@ const DESKTOP_NODES = [
             tone: 'teal',
             icon: TrendingUp,
             details: NET_REWARD_DETAILS,
+            detailKey: 'net-rewards-details',
             detailLayout: 'right-stack',
         },
         style: { width: 310, height: 124 },
@@ -416,6 +417,7 @@ const DESKTOP_NODES = [
             tone: 'pink',
             icon: DollarSign,
             details: ACTION_DETAILS,
+            detailKey: 'action-details',
             detailLayout: 'bottom-split',
         },
         style: { width: 320, height: 126 },
@@ -840,9 +842,9 @@ const StateCardNode = ({ data }) => {
 };
 
 const InteractiveCardNode = ({ data }) => {
-    const [hovered, setHovered] = useState(false);
-    const [pinned, setPinned] = useState(false);
-    const isOpen = hovered || pinned;
+    const { activeKey, setActiveKey, pinnedKey, setPinnedKey } = useContext(SharedDetailContext);
+    const detailKey = data.detailKey ?? data.title;
+    const isOpen = activeKey === detailKey || pinnedKey === detailKey;
 
     const renderDetails = () => {
         if (!isOpen) return null;
@@ -891,16 +893,16 @@ const InteractiveCardNode = ({ data }) => {
     return (
         <div
             className="relative h-full w-full overflow-visible nodrag nopan nowheel"
-            onPointerEnter={() => setHovered(true)}
-            onPointerLeave={() => setHovered(false)}
-            onFocus={() => setHovered(true)}
-            onBlur={() => setHovered(false)}
+            onPointerEnter={() => setActiveKey(detailKey)}
+            onPointerLeave={() => setActiveKey((current) => (current === detailKey ? null : current))}
+            onFocus={() => setActiveKey(detailKey)}
+            onBlur={() => setActiveKey((current) => (current === detailKey ? null : current))}
             style={{ pointerEvents: 'all' }}
         >
             {renderHandles()}
             <button
                 type="button"
-                onClick={() => setPinned((value) => !value)}
+                onClick={() => setPinnedKey((current) => (current === detailKey ? null : detailKey))}
                 className="nodrag nopan nowheel block h-full w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-coffee-950"
             >
                 <BaseCard {...data} />
@@ -1170,7 +1172,6 @@ const RLPipelineFlow = ({ theme }) => {
 
                                 <div className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-white/65 ring-offset-2 ring-offset-transparent" />
                                 <div className="pointer-events-none absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-100/75 bg-white/10 shadow-[0_0_0_1px_rgba(255,255,255,0.18)]" />
-                                <div className="pointer-events-none absolute left-[52%] top-[84%] h-14 w-3 -translate-x-1/2 -translate-y-1/2 rotate-[-38deg] rounded-full bg-amber-100/80 shadow-[0_6px_12px_rgba(0,0,0,0.18)]" />
                             </div>
                         ) : null}
                     </div>

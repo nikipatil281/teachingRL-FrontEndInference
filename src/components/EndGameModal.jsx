@@ -86,6 +86,7 @@ const EndGameModal = ({ isOpen, history, theme, toggleTheme, shopName = "You", o
                     weather: record.weather,
                     event: record.nearbyEvent,
                     competitor: record.competitorPresent,
+                    competitorPrices: [],
                     prices: [],
                     dayCounts: {},
                     startInventories: [],
@@ -94,6 +95,9 @@ const EndGameModal = ({ isOpen, history, theme, toggleTheme, shopName = "You", o
 
             if (record.playerPrice) {
                 playerPolicyMap[stateKey].prices.push(record.playerPrice);
+            }
+            if (record.competitorPresent && Number.isFinite(record.competitorPrice)) {
+                playerPolicyMap[stateKey].competitorPrices.push(record.competitorPrice);
             }
             if (record.dayName) {
                 playerPolicyMap[stateKey].dayCounts[record.dayName] = (playerPolicyMap[stateKey].dayCounts[record.dayName] || 0) + 1;
@@ -119,6 +123,8 @@ const EndGameModal = ({ isOpen, history, theme, toggleTheme, shopName = "You", o
             const minInventory = state.startInventories.length > 0 ? Math.min(...state.startInventories) : null;
             const maxInventory = state.startInventories.length > 0 ? Math.max(...state.startInventories) : null;
             const inventoryDisplay = formatInventoryRange(minInventory, maxInventory);
+            const competitorMin = state.competitorPrices.length > 0 ? Math.min(...state.competitorPrices) : null;
+            const competitorMax = state.competitorPrices.length > 0 ? Math.max(...state.competitorPrices) : null;
 
             return {
                 ...state,
@@ -129,6 +135,11 @@ const EndGameModal = ({ isOpen, history, theme, toggleTheme, shopName = "You", o
                     : 'N/A',
                 inventoryRangeString: inventoryDisplay.label,
                 inventoryIsApproximate: inventoryDisplay.approximate,
+                competitorRangeStr: !state.competitor
+                    ? 'No'
+                    : competitorMin === competitorMax
+                        ? `$${competitorMin?.toFixed(2)}`
+                        : `$${competitorMin?.toFixed(2)} - $${competitorMax?.toFixed(2)}`,
                 distributionString,
                 count: state.prices.length
             };
@@ -312,7 +323,9 @@ const EndGameModal = ({ isOpen, history, theme, toggleTheme, shopName = "You", o
                                                 </td>
                                                 <td className="px-3 py-2.5 text-center">
                                                     {state.competitor ? (
-                                                        <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold">Yes</span>
+                                                        <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold whitespace-nowrap">
+                                                            {state.competitorRangeStr}
+                                                        </span>
                                                     ) : (
                                                         <span className="text-coffee-500 text-xs">No</span>
                                                     )}

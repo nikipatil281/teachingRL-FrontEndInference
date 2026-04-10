@@ -10,7 +10,7 @@ import {
   getNormalizedPrice,
   WEEKLY_START_INVENTORY
 } from '../logic/MarketEngine';
-import { getMLPrice } from "../logic/MLAgent";
+import { getCsvPriceSuggestion } from "../logic/PriceSuggestionLookup";
 import MarketView from './MarketView';
 import ProfitChart from './ProfitChart';
 import EmergencyRestockModal from './EmergencyRestockModal';
@@ -78,18 +78,17 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
   React.useEffect(() => {
     const updateML = async () => {
       if (!mlReady) return;
-      const price = await getMLPrice(
-        conditions.day,
-        conditions.weather,
-        conditions.nearbyEvent,
-        mlInventory,
-        conditions.competitorPresent,
-        conditions.competitorPrice || 0
-      );
-      setMLSuggestion(getNormalizedPrice(price));
+      const suggestion = await getCsvPriceSuggestion({
+        day: conditions.day,
+        weather: conditions.weather,
+        nearbyEvent: conditions.nearbyEvent,
+        competitorPresent: conditions.competitorPresent,
+        competitorPrice: conditions.competitorPrice || 0
+      });
+      setMLSuggestion(getNormalizedPrice(suggestion?.mlPrice ?? 5));
     };
     updateML();
-  }, [conditions, mlInventory, mlReady]);
+  }, [conditions, mlReady]);
 
   useEffect(() => {
     const updateTutorialViewport = () => {
