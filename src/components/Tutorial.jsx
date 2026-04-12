@@ -564,7 +564,7 @@ const Tutorial = ({ onComplete, theme, toggleTheme, shopName, userAvatar = 'Leo'
                   <div className="w-full">
                     {memoryData && !showPopup && (
                       <div className="bg-blue-900/20 border border-blue-500/30 p-2 rounded-lg text-[10px] lg:text-[11px] text-blue-200 leading-snug w-full">
-                        <div className="font-bold text-blue-800 dark:text-blue-400 mb-0.5 flex items-center gap-1"><Info className="w-3 h-3" /> If you wanna try exploiting...</div>
+                        <div className="font-bold text-blue-800 dark:text-blue-400 mb-0.5 flex items-center gap-1"><Info className="w-3 h-3" /> If you want to try exploiting...</div>
                         <span className="text-blue-900 dark:text-blue-200">
                           On a previous {memoryData.dayStr}, a similar state gave a profit of <span className="font-bold text-blue-900 dark:text-white">${memoryData.profit?.toFixed(0)}</span> and net reward of <span className="font-bold text-blue-900 dark:text-white">{memoryData.reward?.toFixed(0)} Pts</span> at the price per cup of <span className="font-bold text-blue-900 dark:text-white">${memoryData.price.toFixed(2)}</span>.
                         </span>
